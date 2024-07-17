@@ -1,5 +1,5 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
-<idea-plugin>
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
     <id>com.github.mrolappe.ijo2a</id>
     <name>ij-o2a</name>
     <vendor>mrolappe</vendor>
@@ -15,4 +15,7 @@
     <applicationListeners>
         <listener class="com.github.mrolappe.ijo2a.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
     </applicationListeners>
+
+    <xi:include href="Oberon.xml" xpointer="xpointer(/idea-plugin/*)"/>
+
 </idea-plugin>

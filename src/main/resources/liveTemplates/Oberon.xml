@@ -1,0 +1,8 @@
+<templateSet group="Oberon">
+  <template name="proc" value="PROCEDURE $PROC_NAME$();&#10;BEGIN&#10;$END$&#10;END $PROC_NAME$;&#10;" description="Oberon procedure" toReformat="false" toShortenFQNames="true">
+    <variable name="PROC_NAME" expression="" defaultValue="" alwaysStopAt="true" />
+    <context>
+      <option name="OBERON" value="true" />
+    </context>
+  </template>
+</templateSet>

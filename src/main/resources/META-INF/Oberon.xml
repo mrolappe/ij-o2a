@@ -1,0 +1,97 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="Oberon" implementationClass="me.mrolappe.intellij.lang.oberon.OberonFileType"
+                  fieldName="INSTANCE" language="Oberon" extensions="mod"/>
+
+        <lang.parserDefinition language="Oberon"
+                               implementationClass="me.mrolappe.intellij.lang.oberon.OberonParserDefinition"/>
+
+        <lang.syntaxHighlighterFactory language="Oberon"
+                                       implementationClass="me.mrolappe.intellij.lang.oberon.OberonSyntaxHighlighterFactory"/>
+
+        <lang.commenter language="Oberon"
+                        implementationClass="me.mrolappe.intellij.lang.oberon.OberonCommenter"/>
+
+        <lang.psiStructureViewFactory language="Oberon"
+                                      implementationClass="me.mrolappe.intellij.lang.oberon.OberonStructureViewFactory"/>
+
+        <lang.quoteHandler implementationClass="me.mrolappe.intellij.lang.oberon.OberonQuoteHandler"
+                           language="Oberon"/>
+
+        <lang.braceMatcher language="Oberon"
+                           implementationClass="me.mrolappe.intellij.lang.oberon.OberonBraceMatcher"/>
+
+        <completion.contributor language="Oberon"
+                                implementationClass="me.mrolappe.intellij.lang.oberon.OberonCompletionContributor"/>
+
+        <lang.formatter language="Oberon"
+                        implementationClass="me.mrolappe.intellij.lang.oberon.OberonFormattingModelBuilder"/>
+
+<!--        <codeStyleSettingsProvider-->
+<!--                implementation="me.mrolappe.intellij.lang.oberon.OberonCodeStyleSettingsProvider"/>-->
+
+        <langCodeStyleSettingsProvider
+                implementation="me.mrolappe.intellij.lang.oberon.OberonLanguageCodeStyleSettingsProvider"/>
+
+        <gotoSymbolContributor
+                implementation="me.mrolappe.intellij.lang.oberon.OberonChooseModuleByNameContributor"/>
+
+        <gotoSymbolContributor
+                implementation="me.mrolappe.intellij.lang.oberon.OberonChooseTypeByNameContributor"/>
+
+        <annotator language="Oberon" implementationClass="me.mrolappe.intellij.lang.oberon.ConstAnnotator"/>
+
+        <annotator language="Oberon" implementationClass="me.mrolappe.intellij.lang.oberon.PredeclaredIdentifierAnnotator" />
+
+        <lang.documentationProvider language="Oberon"
+                                    implementationClass="me.mrolappe.intellij.lang.oberon.OberonDocumentationProvider"/>
+
+        <documentationActionProvider implementation="me.mrolappe.intellij.lang.oberon.OberonDocumentationActionProvider" />
+
+        <codeInsight.typeInfo language="Oberon"
+                              implementationClass="me.mrolappe.intellij.lang.oberon.OberonExpressionTypeProvider"/>
+
+        <codeInsight.inlayProvider language="Oberon"
+                                   implementationClass="me.mrolappe.intellij.lang.oberon.OberonInlayProvider"/>
+
+        <lang.foldingBuilder language="Oberon"
+                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonProcedureFoldingBuilder"/>
+
+        <lang.foldingBuilder language="Oberon"
+                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonImportSectionFoldingBuilder"/>
+
+        <lang.foldingBuilder language="Oberon"
+                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonVarSectionFoldingBuilder"/>
+
+        <lang.foldingBuilder language="Oberon"
+                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonHeaderCommentFoldingBuilder"/>
+
+        <lang.foldingBuilder language="Oberon"
+                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonConstSectionFoldingBuilder" />
+
+        <lang.foldingBuilder language="Oberon"
+                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonTypeSectionFoldingBuilder" />
+
+        <lang.foldingBuilder language="Oberon"
+                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonIfFoldingBuilder" />
+
+        <lang.foldingBuilder language="Oberon"
+                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonCaseFoldingBuilder" />
+
+        <lang.foldingBuilder language="Oberon"
+                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonLoopFoldingBuilder" />
+
+        <lang.findUsagesProvider language="Oberon"
+                                 implementationClass="me.mrolappe.intellij.lang.oberon.OberonFindUsagesProvider" />
+
+        <navbar implementation="me.mrolappe.intellij.lang.oberon.OberonStructureAwareNavBar" />
+
+        <codeInsight.parameterNameHints language="Oberon"
+                                        implementationClass="me.mrolappe.intellij.lang.oberon.OberonParameterNameHints" />
+
+        <defaultLiveTemplates file="/liveTemplates/Oberon.xml" />
+
+        <liveTemplateContext implementation="me.mrolappe.intellij.lang.oberon.liveTemplates.OberonContext"
+                             contextId="Oberon"/>
+    </extensions>
+</idea-plugin>

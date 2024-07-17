@@ -1,0 +1,591 @@
+// TODOs
+// - AmigaOberon PROCEDURE*
+// - kollision real lit mit .. range op
+// - AmigaOberon: es scheint noch eine weitere verwendung von .. bei parametern zu geben, beispiel: tag1{8}..   : e.APTR
+// - bei strings gibt es noch ein problem, es wird zu viel gematcht; beispiel (MuchMore.mod):   IF DirExists("T:") THEN Name := "T:" ELSE Name := "RAM:" END;
+
+{
+    parserClass = 'me.mrolappe.intellij.lang.oberon.parser.OberonParser'
+    parserUtilClass="me.mrolappe.intellij.lang.oberon.parser.OberonParserUtilKt"
+
+    extends = 'com.intellij.extapi.psi.ASTWrapperPsiElement'
+
+    psiClassPrefix = 'Oberon'
+    psiImplClassSuffix = 'Impl'
+    psiPackage = 'me.mrolappe.intellij.lang.oberon.psi'
+    psiImplPackage = 'me.mrolappe.intellij.lang.oberon.psi.impl'
+
+    elementTypeHolderClass = 'me.mrolappe.intellij.lang.oberon.psi.OberonTypes'
+    elementTypeClass = 'me.mrolappe.intellij.lang.oberon.psi.OberonElementType'
+    tokenTypeClass = 'me.mrolappe.intellij.lang.oberon.psi.OberonTokenType'
+
+    psiImplUtilClass = 'me.mrolappe.intellij.lang.oberon.psi.impl.OberonPsiImplUtil'
+
+    tokens = [
+// only here for preview and token type generation, handle specially in JFlex grammar: "(*" ~"*)"
+        COMMENT = 'regexp:\(\*([^*]|\*[^)])*?\*\)'
+        CHAR_CONST = 'regexp:[A-Fa-f0-99]+X'
+//        STR_LIT = "regexp:('[^']*')|(\"([^\"]|\\\")*?\")"
+        STR_LIT = 'regexp:".*?"'
+        PSEUDO_COMMENT = 'regexp:<\*([^*]|\*[^>])*?\*>'
+
+        AMP = '&'
+        CARET = '^'
+        COLON = ':'
+        COLON_EQUALS = ':='
+        COMMA = ','
+        DOT = '.'
+        DOT_DOT = '..'
+        EQUALS = '='
+        GREATER = '>'
+        GREATER_EQUAL = '>='
+        HASH = '#'
+        LBRACE = '{'
+        LBRACK = '['
+        LPAREN = '('
+        LESS = '<'
+        LESS_EQUAL = '<='
+        MINUS = '-'
+        PIPE = '|'
+        PLUS = '+'
+        RBRACE = '}'
+        RBRACK = ']'
+        RPAREN = ')'
+        SEMI = ';'
+        SLASH = '/'
+        STAR = '*'
+        TILDE = '~'     // neg
+
+// keywords
+        ARRAY = 'ARRAY'
+        BEGIN = 'BEGIN'
+        BY = 'BY'           // oberon-2
+        CASE = 'CASE'
+        CONST = 'CONST'
+        DIV = 'DIV'
+        DO = 'DO'
+        ELSE = 'ELSE'
+        ELSIF = 'ELSIF'
+        END = 'END'
+        EXIT = 'EXIT'
+        FOR = 'FOR'         // oberon-2
+        IF = 'IF'
+        IMPORT = 'IMPORT'
+        IN = 'IN'
+        IS = 'IS'
+        LOOP = 'LOOP'
+        MOD = 'MOD'
+        MODULE = 'MODULE'
+        NIL = 'NIL'
+        OF = 'OF'
+        OR = 'OR'
+        POINTER = 'POINTER'
+        PROCEDURE = 'PROCEDURE'
+        RECORD = 'RECORD'
+        REPEAT = 'REPEAT'
+        RETURN = 'RETURN'
+        THEN = 'THEN'
+        TO = 'TO'
+        TYPE = 'TYPE'
+        UNTIL = 'UNTIL'
+        UNTRACED = 'UNTRACED'    // Amiga Oberon
+        VAR = 'VAR'
+        WHILE = 'WHILE'
+        WITH = 'WITH'
+
+// AmigaOberon - Keywords
+        AND = 'AND'
+        BPOINTER = 'BPOINTER'
+        CLOSE = 'CLOSE'
+        NOT = 'NOT'
+        STRUCT = 'STRUCT'
+
+// AmigaOberon - predefined identifiers
+//        DISPOSE = 'DISPOSE'
+
+        WHITE_SPACE= 'regexp:\s+'   // for live preview only
+
+        // handle specially in JFlex grammar due to collision with .. range op
+//        REAL_LIT = 'regexp:\d+\.(\d*([ED][\+\-]?\d+)?)'
+        // AmigaOberon seems to accept D without concrete scale factor
+        REAL_LIT = 'regexp:(\d+\.(\d+D))|(\d+\.\d+([ED][\+\-]?\d+)?)'
+        // TODO fix the problem that some names (e.g. DU) are tokenized as integer literals
+        IDENT = 'regexp:[A-Za-z_][A-Za-z_0-9]*'
+        INT_LIT = 'regexp:([A-Fa-f0-9]+[HU]|\d+)'       // U: Amiga Oberon; see MuchMore.mod
+    ]
+}
+
+//tmp ::=
+//    while_stmt
+
+
+file ::=
+    [ module_def ]
+
+module_def ::=
+    module_head
+//    [ ene_mene_miste ]
+    [ import_list ]
+    decl_seq
+    [ module_init ]
+    // &<<amiga_oberon_mode>>
+    [ 'CLOSE'           // AmigaOberon
+        stmt_seq ]
+    'END' IDENT '.'
+    {
+        name="module definition"
+        implements="com.intellij.psi.NavigatablePsiElement"
+        methods=[getName]
+    }
+
+private ene_mene_miste ::=
+    UNTRACED loop WITH POINTER
+    { pin=2  recoverWhile=recover_ene }
+
+private loop ::=
+    LOOP IDENT REPEAT
+
+private recover_ene ::=
+    !(BEGIN | IMPORT)
+
+private module_head ::=
+    'MODULE' module_def_name ';'
+    // Oberon-A notation: specifies default system flag for module
+    | 'MODULE'
+        [ '[' INT_LIT ']' ]
+        module_def_name
+        [ '[' STR_LIT ( ',' STR_LIT )* ']' ]    // names of external object files
+        ';'
+module_init ::=
+    'BEGIN'
+    [ stmt_seq ]
+    {
+        name="module initializer"
+        }
+
+module_def_name ::= IDENT
+    {
+        implements="me.mrolappe.intellij.lang.oberon.psi.OberonNamedElement"
+        mixin="me.mrolappe.intellij.lang.oberon.psi.impl.OberonNamedElementImpl"
+        methods=[moduleName="IDENT" getName setName getNameIdentifier getPresentation]
+    }
+
+import_list ::=
+    'IMPORT' import_decl ( ',' import_decl )* ';'
+
+import_decl ::= [ import_alias ] import_module_reference
+
+import_alias ::=
+    IDENT [ <<amiga_oberon_mode>> '*' ] ':='
+    | IDENT [ <<amiga_oberon_mode>> '*' ] ':'   // oberon-1 variant?
+    {
+        implements="me.mrolappe.intellij.lang.oberon.psi.OberonNamedElement"
+        mixin="me.mrolappe.intellij.lang.oberon.psi.impl.OberonNamedElementImpl"
+        methods=[aliasName="IDENT" getNameIdentifier getName setName]
+    }
+
+import_module_reference ::=
+    // * marks for export
+    IDENT '*'
+    | IDENT
+    {
+        methods=[getReference]
+    }
+
+type_decl ::=
+    type_decl_name
+    '=' type_spec
+    {
+        implements="com.intellij.psi.NavigatablePsiElement" methods=[ getName ]
+    }
+
+type_decl_name ::=
+    IDENT
+    [ export_mark ]
+    {
+        implements="me.mrolappe.intellij.lang.oberon.psi.OberonNamedElement"
+        mixin="me.mrolappe.intellij.lang.oberon.psi.impl.OberonNamedElementImpl"
+        methods=[typeName="IDENT" getName setName getNameIdentifier]
+    }
+
+type_spec ::=
+    array_type_spec
+    | record_type_spec
+    | <<amiga_oberon_mode>> struct_type_spec      // Amiga Oberon
+    | <<amiga_oberon_mode>> ( 'SET' | 'SHORTSET' | 'LONGSET' )    // Amiga Oberon
+    | pointer_type_spec
+    | 'PROCEDURE' [ formal_params ]
+    | qual_ident
+
+array_type_spec ::=
+    'ARRAY' [ const_expr ( ',' const_expr )* ] 'OF' type_spec
+
+record_type_spec ::=
+    'RECORD' [ '(' record_base_type ')' ]
+        field_list? ( ';' field_list? )*
+    'END'
+    // Oberon-A system flag notation
+    | 'RECORD' '[' INT_LIT ']' [ '(' record_base_type ')' ]
+        field_list? ( ';' field_list? )*
+    'END'
+
+record_base_type ::=
+    qual_ident
+
+struct_type_spec ::=
+    'STRUCT'
+        // extend from struct specified by identifier after ':'; access must be qualified by identifier given before ':'
+        [ '(' [ IDENT ( '*' | '-' )? ':' ] qual_ident ')' ]
+        field_list? ( ';' field_list? )*
+    'END'
+
+field_list ::=
+    ident_list ':' type_spec
+
+ident_list ::=
+    ident_def ( ',' ident_def )*
+
+ident_def ::=
+    IDENT
+    [ export_mark ]
+    {
+        implements="me.mrolappe.intellij.lang.oberon.psi.OberonNamedElement"
+        mixin="me.mrolappe.intellij.lang.oberon.psi.impl.OberonNamedElementImpl"
+        methods=[getName setName getNameIdentifier]
+    }
+
+var_decl_name_list ::=
+    var_decl_name ( ',' var_decl_name )*
+
+var_decl_name ::=
+    IDENT // <<pling_plong "var_decl_name">>
+    [ export_mark ]
+    [ '[' ( int_const_expr /* Amiga Oberon abs var */ | STR_LIT /* Amiga Oberon ext proc ref */) ']'  ]
+    {
+        implements="me.mrolappe.intellij.lang.oberon.psi.OberonNamedElement"
+        mixin="me.mrolappe.intellij.lang.oberon.psi.impl.OberonNamedElementImpl"
+        methods=[varName="IDENT" getName setName getNameIdentifier]
+    }
+
+int_const_expr ::=
+    expr
+
+qual_ident ::=
+    [ qual_ident_qualifier ] qual_ident_identifier
+    { methods=[getReferences modulePart="qual_ident_module_part" memberPart="qual_ident_member_part"] }
+
+qual_ident_qualifier ::=
+    IDENT '.'
+    { methods=[qualifier="IDENT"] }
+
+qual_ident_identifier ::=
+    IDENT
+    { methods=[identifier="IDENT"] }
+
+pointer_type_spec ::=
+    [ 'UNTRACED' ] 'POINTER' [ reg_spec ] 'TO' type_spec
+    | 'BPOINTER' [ reg_spec ] 'TO' type_spec
+
+// TBD oberon-a only?
+reg_spec ::= '[' const_expr ']'
+
+var_decl ::=
+    var_decl_name_list
+//    <<pling_plong "var_decl var_decl_name_list" >>
+    ':' type_spec ';'
+
+procedure_decl ::=
+    'PROCEDURE'
+    [ '*' /* Amiga Oberon */ ]
+    [ '[' INT_LIT ']']          // Oberon-A: For overriding default system flag set for module
+    [ receiver ]
+    proc_decl_name
+    [ formal_params ] ';'
+    decl_seq
+    [ 'BEGIN'
+        [ stmt_seq ] ]
+    'END' IDENT ';'
+    { methods=[markedForExport]
+    }
+
+// Amiga Oberon
+amiga_oberon_shared_lib_proc_decl ::=
+    'PROCEDURE' ident_def
+    amiga_oberon_shared_lib_lv_data
+    [ formal_params ] ';'
+
+amiga_oberon_shared_lib_lv_data ::=
+    '{' IDENT ',' [ '-' ] INT_LIT '}'       // shared library vector data: base variable name and offset
+    { methods=[baseVarName="IDENT" minus="MINUS" offset="INT_LIT" getReference] }
+
+// Amiga Oberon
+amiga_oberon_external_proc_decl ::=
+    'PROCEDURE' ident_def '{' STR_LIT '}' [ formal_params ] ';'
+
+oberon_a_lib_proc_decl ::=
+    'PROCEDURE'
+    proc_decl_name
+    [ oberon_a_shared_lib_lv_data ]
+    '(' [ oberon_a_formal_parameters ] ')' [ ':' formal_type ] ';'
+
+oberon_a_shared_lib_lv_data ::=
+    '[' IDENT ',' [ '-' ] INT_LIT ']'   // shared library vector data: base variable name and offset
+    { methods=[baseVarName="IDENT" minus="MINUS" offset="INT_LIT" getReference] }
+
+oberon_a_external_proc_decl ::=
+    'PROCEDURE'
+        ['*']                   // mark as assignable procedure
+        [ '[' INT_LIT ']' ]     // system flag
+        proc_decl_name
+        [ '[' STR_LIT ']']      // (linker) name of external procedure
+        '(' [ oberon_a_formal_parameters ] ')' [ ':' formal_type ] ';'
+
+proc_decl_name ::=
+    IDENT
+    [ export_mark ]
+    {
+        implements="me.mrolappe.intellij.lang.oberon.psi.OberonNamedElement"
+        mixin="me.mrolappe.intellij.lang.oberon.psi.impl.OberonNamedElementImpl"
+        methods=[procedureName="IDENT" setName getNameIdentifier]
+    }
+
+export_mark ::=
+    '*' | '-'
+    { methods=[readWriteExportMark="STAR" readOnlyExportMark="MINUS"] }
+
+oberon_a_formal_parameters ::=
+    oberon_a_formal_parameter ( ';' oberon_a_formal_parameter )*
+
+oberon_a_formal_parameter ::=
+    [ 'VAR' ] IDENT oberon_a_reg_spec ( ',' IDENT oberon_a_reg_spec )* ':' formal_type
+    | [ 'VAR' ] IDENT ':' formal_type
+
+// see also "Register parameters" in oc.doc
+private oberon_a_reg_spec ::=
+    '[' INT_LIT ']'     // register (0-15)
+    [ ".." ]                // varargs marker
+
+private receiver ::=
+    '(' [ 'VAR' ] receiver_name ':' receiver_type ')'
+
+receiver_name ::=
+    IDENT
+    {
+        implements="me.mrolappe.intellij.lang.oberon.psi.OberonNamedElement"
+        mixin="me.mrolappe.intellij.lang.oberon.psi.impl.OberonNamedElementImpl"
+        methods=[IDENT getNameIdentifier getName setName]
+    }
+
+receiver_type ::=
+    IDENT
+    { methods=[IDENT getReference] }
+
+forward_decl ::=
+    'PROCEDURE' '^' [ receiver ] ident_def [ formal_params ]
+
+private decl_seq ::=
+    (
+        const_section
+        | type_section
+        | var_section
+        | procedure_decl
+        | forward_decl ';'
+        | amiga_oberon_shared_lib_proc_decl
+        | amiga_oberon_external_proc_decl
+        | oberon_a_lib_proc_decl
+        | oberon_a_external_proc_decl
+    )*
+
+type_section ::= 'TYPE' ( type_decl ';' )*
+
+var_section ::= 'VAR' ( var_decl )*
+
+const_section ::= 'CONST' ( const_decl  )*
+
+const_decl ::=
+    const_decl_name '=' const_expr ';'
+
+const_decl_name ::=
+    IDENT
+    [ export_mark ]   // export marker
+    {
+        implements="me.mrolappe.intellij.lang.oberon.psi.OberonNamedElement"
+        mixin="me.mrolappe.intellij.lang.oberon.psi.impl.OberonNamedElementImpl"
+        methods=[constantName="IDENT" getName setName getNameIdentifier markedForExport]
+    }
+
+formal_params ::=
+    '(' [ formal_param_section ( ';' formal_param_section )* ] ')' [ ':' qual_ident ]
+
+// TODO clean up varargs stuff
+formal_param_section ::=
+    [ 'VAR' ] formal_param_name [ amiga_oberon_param_reg_spec ] [ '..' /* AmigaOberon */ ]
+        ( ',' formal_param_name [ amiga_oberon_param_reg_spec ] [ '..' /* AmigaOberon */ ] )* ':' formal_type
+
+formal_param_name ::=
+    IDENT
+    {
+        implements="me.mrolappe.intellij.lang.oberon.psi.OberonNamedElement"
+        mixin="me.mrolappe.intellij.lang.oberon.psi.impl.OberonNamedElementImpl"
+        methods=[paramName="IDENT" getName setName getNameIdentifier getUseScope]
+    }
+
+amiga_oberon_param_reg_spec ::=
+    '{' INT_LIT '}'
+
+formal_type ::=
+    qual_ident
+    | 'ARRAY' [ const_expr ( ',' const_expr )* ] 'OF' formal_type
+    | 'RECORD' 'END'
+    | 'POINTER' 'TO' formal_type
+    | 'PROCEDURE' [ formal_params ]
+
+stmt_seq ::=
+    (';' | (stmt ';') )+ stmt?
+    | stmt
+
+stmt ::=
+        assign_stmt
+        | proc_call_stmt
+        | if_stmt
+        | case_stmt
+        | while_stmt
+        | repeat_stmt
+        | for_stmt      // oberon-2
+        | loop_stmt
+        | with_stmt
+        | 'EXIT'
+        | 'RETURN' [ expr ]
+
+assign_stmt ::=
+    designator ':=' expr
+
+designator ::=
+    qual_ident (
+        '.' IDENT
+        | '[' expr_list ']'
+        | '(' qual_ident ')'    // type guard
+        | '^'
+    )*
+    { methods=[ getReference ]}
+
+expr_list ::=
+    expr ( ',' expr )*
+
+if_stmt ::=
+    'IF' expr 'THEN' [ stmt [ 'ELSE' stmt ] ] 'END'
+    | 'IF' expr 'THEN'
+        stmt_seq?
+    elsif_branch*
+    else_branch?
+    'END'
+    {
+        methods=[ conditionExpression="expr" stmt="" thenStatement="stmt[0]" elseStatement="stmt[1]"
+            thenBlock="stmt_seq" ]
+    }
+
+elsif_branch ::=
+    'ELSIF' expr 'THEN' stmt_seq
+    { methods=[conditionExpression="expr" thenBlock="stmt_seq"] }
+
+else_branch ::=
+    'ELSE' stmt_seq
+    {
+    methods=[elseBlock="stmt_seq"] }
+
+case_stmt ::=
+    'CASE' expr 'OF'
+        case_arm
+        ( '|' case_arm )*
+        [ 'ELSE' [ stmt_seq ] ]
+    'END'
+
+case_arm ::=
+    [ case_label_list  ':' stmt_seq? ]
+
+case_label_list ::=
+    case_labels ( ',' case_labels )*
+
+case_labels ::=
+    const_expr [ '..' const_expr ]
+
+while_stmt ::=
+    'WHILE' expr 'DO'
+        [stmt_seq]
+    'END'
+
+loop_stmt ::=
+    'LOOP'
+        [stmt_seq]
+    'END'
+
+with_stmt ::=
+    'WITH' guard 'DO' stmt_seq
+        ( '|' guard 'DO' stmt_seq )*
+        [ 'ELSE' stmt_seq ]
+    'END'
+
+guard ::=
+    qual_ident ':' qual_ident
+
+repeat_stmt ::=
+    'REPEAT'
+        [ stmt_seq ]
+    'UNTIL' expr
+
+for_stmt ::=
+    'FOR' IDENT ':=' expr 'TO' expr [ 'BY' const_expr ] 'DO'
+        [stmt_seq]
+    'END'
+
+proc_call_stmt ::=
+    designator [ actual_params ]
+    { methods=[ procedureDesignator="designator" ] }
+
+const_expr ::=
+    expr
+
+expr ::=
+    simple_expr [ rel_op simple_expr ]
+
+simple_expr ::=
+    [ '+' | '-' ] term ( add_op term )*
+
+add_op ::=
+    '+' | '-' | 'OR'
+
+term ::=
+    factor ( mul_op factor )*
+
+mul_op ::=
+    '*' | '/' | 'DIV' | 'MOD' | '&'  | <<amiga_oberon_mode>> 'AND'
+
+rel_op ::=
+    '=' | '#' | '<' | '<=' | '>' | '>=' | 'IN' | 'IS'
+
+factor ::=
+    INT_LIT
+    | REAL_LIT
+    | CHAR_CONST
+    | str_lit_multi
+    | NIL
+    | set_lit
+    | designator [ actual_params ] [ <<amiga_oberon_mode>> '^' ]
+    | paren_expr
+    | ( '~' | <<amiga_oberon_mode>> 'NOT' ) factor
+    { methods=[ isNil ] }
+
+private paren_expr ::=
+    '(' expr ')'
+
+str_lit_multi ::= STR_LIT /* TBD multiple only in oberon-a? */ ( STR_LIT )*
+
+set_lit ::=
+    [ IDENT ] // Amiga Oberon -- SET | SHORTSET | LONGSET
+    '{' [ set_elem ( ',' set_elem)* ] '}'
+
+set_elem ::=
+    expr [ '..' expr ]
+
+actual_params ::=
+    '(' [ expr_list ] ')'
