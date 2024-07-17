@@ -31,6 +31,16 @@ kotlin {
     jvmToolchain(17)
 }
 
+sourceSets.main {
+    java.srcDir("src/main/gen")
+}
+
+idea {
+    module {
+        generatedSourceDirs.add(file("src/main/gen"))
+    }
+}
+
 // Configure Gradle IntelliJ Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
     pluginName = properties("pluginName")
