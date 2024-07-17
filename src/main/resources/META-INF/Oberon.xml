@@ -1,97 +1,97 @@
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
-        <fileType name="Oberon" implementationClass="me.mrolappe.intellij.lang.oberon.OberonFileType"
+        <fileType name="Oberon" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonFileType"
                   fieldName="INSTANCE" language="Oberon" extensions="mod"/>
 
         <lang.parserDefinition language="Oberon"
-                               implementationClass="me.mrolappe.intellij.lang.oberon.OberonParserDefinition"/>
+                               implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonParserDefinition"/>
 
         <lang.syntaxHighlighterFactory language="Oberon"
-                                       implementationClass="me.mrolappe.intellij.lang.oberon.OberonSyntaxHighlighterFactory"/>
+                                       implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonSyntaxHighlighterFactory"/>
 
         <lang.commenter language="Oberon"
-                        implementationClass="me.mrolappe.intellij.lang.oberon.OberonCommenter"/>
+                        implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonCommenter"/>
 
         <lang.psiStructureViewFactory language="Oberon"
-                                      implementationClass="me.mrolappe.intellij.lang.oberon.OberonStructureViewFactory"/>
+                                      implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonStructureViewFactory"/>
 
-        <lang.quoteHandler implementationClass="me.mrolappe.intellij.lang.oberon.OberonQuoteHandler"
+        <lang.quoteHandler implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonQuoteHandler"
                            language="Oberon"/>
 
         <lang.braceMatcher language="Oberon"
-                           implementationClass="me.mrolappe.intellij.lang.oberon.OberonBraceMatcher"/>
+                           implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonBraceMatcher"/>
 
         <completion.contributor language="Oberon"
-                                implementationClass="me.mrolappe.intellij.lang.oberon.OberonCompletionContributor"/>
+                                implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonCompletionContributor"/>
 
         <lang.formatter language="Oberon"
-                        implementationClass="me.mrolappe.intellij.lang.oberon.OberonFormattingModelBuilder"/>
+                        implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonFormattingModelBuilder"/>
 
 <!--        <codeStyleSettingsProvider-->
-<!--                implementation="me.mrolappe.intellij.lang.oberon.OberonCodeStyleSettingsProvider"/>-->
+<!--                implementation="de.rholambdapi.o2a.intellij.lang.oberon22.OberonCodeStyleSettingsProvider"/>-->
 
         <langCodeStyleSettingsProvider
-                implementation="me.mrolappe.intellij.lang.oberon.OberonLanguageCodeStyleSettingsProvider"/>
+                implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonLanguageCodeStyleSettingsProvider"/>
 
         <gotoSymbolContributor
-                implementation="me.mrolappe.intellij.lang.oberon.OberonChooseModuleByNameContributor"/>
+                implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonChooseModuleByNameContributor"/>
 
         <gotoSymbolContributor
-                implementation="me.mrolappe.intellij.lang.oberon.OberonChooseTypeByNameContributor"/>
+                implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonChooseTypeByNameContributor"/>
 
-        <annotator language="Oberon" implementationClass="me.mrolappe.intellij.lang.oberon.ConstAnnotator"/>
+        <annotator language="Oberon" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.ConstAnnotator"/>
 
-        <annotator language="Oberon" implementationClass="me.mrolappe.intellij.lang.oberon.PredeclaredIdentifierAnnotator" />
+        <annotator language="Oberon" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.PredeclaredIdentifierAnnotator" />
 
         <lang.documentationProvider language="Oberon"
-                                    implementationClass="me.mrolappe.intellij.lang.oberon.OberonDocumentationProvider"/>
+                                    implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonDocumentationProvider"/>
 
-        <documentationActionProvider implementation="me.mrolappe.intellij.lang.oberon.OberonDocumentationActionProvider" />
+        <documentationActionProvider implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonDocumentationActionProvider" />
 
         <codeInsight.typeInfo language="Oberon"
-                              implementationClass="me.mrolappe.intellij.lang.oberon.OberonExpressionTypeProvider"/>
+                              implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonExpressionTypeProvider"/>
 
         <codeInsight.inlayProvider language="Oberon"
-                                   implementationClass="me.mrolappe.intellij.lang.oberon.OberonInlayProvider"/>
+                                   implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonInlayProvider"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonProcedureFoldingBuilder"/>
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonProcedureFoldingBuilder"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonImportSectionFoldingBuilder"/>
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonImportSectionFoldingBuilder"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonVarSectionFoldingBuilder"/>
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonVarSectionFoldingBuilder"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonHeaderCommentFoldingBuilder"/>
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonHeaderCommentFoldingBuilder"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonConstSectionFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonConstSectionFoldingBuilder" />
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonTypeSectionFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonTypeSectionFoldingBuilder" />
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonIfFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonIfFoldingBuilder" />
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonCaseFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonCaseFoldingBuilder" />
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="me.mrolappe.intellij.lang.oberon.OberonLoopFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonLoopFoldingBuilder" />
 
         <lang.findUsagesProvider language="Oberon"
-                                 implementationClass="me.mrolappe.intellij.lang.oberon.OberonFindUsagesProvider" />
+                                 implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonFindUsagesProvider" />
 
-        <navbar implementation="me.mrolappe.intellij.lang.oberon.OberonStructureAwareNavBar" />
+        <navbar implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonStructureAwareNavBar" />
 
         <codeInsight.parameterNameHints language="Oberon"
-                                        implementationClass="me.mrolappe.intellij.lang.oberon.OberonParameterNameHints" />
+                                        implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonParameterNameHints" />
 
         <defaultLiveTemplates file="/liveTemplates/Oberon.xml" />
 
-        <liveTemplateContext implementation="me.mrolappe.intellij.lang.oberon.liveTemplates.OberonContext"
+        <liveTemplateContext implementation="de.rholambdapi.o2a.intellij.lang.oberon2.liveTemplates.OberonContext"
                              contextId="Oberon"/>
     </extensions>
 </idea-plugin>
