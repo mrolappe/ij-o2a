@@ -1,0 +1,77 @@
+ein paar notizen, um später nachzuvollziehen, welche schritte nötig sind, um nach dem auschecken ein ohne fehler
+baubares und testbares plugin zu bekommen.
+
+- existierenden code kopiert aus ij-amiga-retro-dev
+- bauen schlägt fehl wegen fehlender klassen, die ergebnis der grammarkit-generierung sind
+....
+
+e: file:///Users/mrolappe/studio/ij-o2a/src/main/kotlin/me/mrolappe/intellij/lang/oberon/OberonAnnotators.kt:8:45 Unresolved reference 'OberonConstDeclName'.
+....
+
+in diesem fall bezieht sich `OberonConstDeclName` auf die klasse, die für die regel `const_decl_name` der grammatik generiert wird.
+
+- generieren des parser-codes für die grammatik; `Generate Parser Code` aus dem kontextmenü der grammatik-definition `Oberon.bnf`
+- bauen schlägt fehl; der code für `OberonConstDeclName` etc. wurde zwar konfiguriert, die dateien gehören allerdings nicht zum source set und werden infolgedessen nicht berücksichtigt
+- recherchieren, ob das hinzufügen des source sets oder das markieren des `gen`-verzeichnisses als "generated sources root" notwendig ist -> das sichten von projekten, die grammarkit verwenden, ergibt, dass das `gen` verzeichnis im rahmen der build-definition dem source set hinzugefügt wird
+- folgende konfiguration in der build-definition fügt das verzeichnis dem kotlin source set hinzu und markiert es als "generated sources root"
+[source,kotlin]
+----
+sourceSets.main {
+    kotlin.srcDir("src/main/gen")
+}
+
+idea {
+    module {
+        generatedSourceDirs.add(file("src/main/gen"))
+    }
+}
+----
+
+- eine weitere fehlermeldung gibt es dann im zusammenhang mit dem lexer; wie zu erwarten, da der code generiert werden muss. am besten wäre, das ganze im rahmen des builds abzufrühstücken.
+....
+e: file:///Users/mrolappe/studio/ij-o2a/src/main/kotlin/me/mrolappe/intellij/lang/oberon/OberonLexerAdapter.kt:5:40 Unresolved reference '_OberonLexer'.
+....
+- generieren des lexer-codes; `Run JFlex Generator` im kontextmenü von `OberonLexer.flex`
+
+- die bisherigen schritte führten zwar zu einem erfolgreichen build. allerdings gab es dann beim testen via `runIde` einen laufzeitfehler. die und die klasse könnte nicht gefunden werden. wie sich herausstellt, wurden nicht alle klassen compiliert bzw. ins JAR gepackt.
+ daher habe ich die generierten sourcen dem `java` source set zugeordnet. nun kommt die nächste hürde
+- es gibt nun fehlermeldungen, die nicht implementierte methoden (hier `getNameIdentifier()` in `PsiNameIdentifierOwner` erwähnen)
+....
+/Users/mrolappe/studio/ij-o2a/src/main/gen/me/mrolappe/intellij/lang/oberon/psi/impl/OberonTypeDeclNameImpl.java:13: error: OberonTypeDeclNameImpl is not abstract and does not override abstract method getNameIdentifier() in PsiNameIdentifierOwner
+public class OberonTypeDeclNameImpl extends OberonNamedElementImpl implements OberonTypeDeclName {
+       ^
+/Users/mrolappe/studio/ij-o2a/src/main/gen/me/mrolappe/intellij/lang/oberon/psi/impl/OberonImportAliasImpl.java:13: error: OberonImportAliasImpl is not abstract and does not override abstract method getNameIdentifier() in PsiNameIdentifierOwner
+public class OberonImportAliasImpl extends OberonNamedElementImpl implements OberonImportAlias {
+       ^
+/Users/mrolappe/studio/ij-o2a/src/main/gen/me/mrolappe/intellij/lang/oberon/psi/impl/OberonModuleDefNameImpl.java:13: error: OberonModuleDefNameImpl is not abstract and does not override abstract method getNameIdentifier() in PsiNameIdentifierOwner
+public class OberonModuleDefNameImpl extends OberonNamedElementImpl implements OberonModuleDefName {
+....
+
+bei genauerer betrachtung der beteiligten klassen/interfaces fällt folgendes in diesem zusammenhang auf:
+[source,java]
+----
+public interface OberonTypeDeclName extends OberonNamedElement {
+
+  @Nullable
+  OberonExportMark getExportMark();
+
+  @NotNull
+  PsiElement getTypeName();
+
+  //WARNING: getName(...) is skipped
+  //matching getName(OberonTypeDeclName, ...)
+  //methods are not found in OberonPsiImplUtil
+
+  //WARNING: setName(...) is skipped
+  //matching setName(OberonTypeDeclName, ...)
+  //methods are not found in OberonPsiImplUtil
+
+  //WARNING: getNameIdentifier(...) is skipped
+  //matching getNameIdentifier(OberonTypeDeclName, ...)
+  //methods are not found in OberonPsiImplUtil
+}
+----
+die situation ist also die, dass für die generierten klassen (hier z.b. `OberonTypeDeclNameImpl`) die angegeben methoden nicht generiert/implementiert wurden. und zwar, weil hierfür eine notwendige methode in der PsiImplUtil-klasse fehlt. an diese methode würde normalerweise delegiert. daher implementiert die generierte klasse das angegebene interface nicht.
+ die frage ist nun, wieso die angegebenen methoden nicht gefunden werden. diese implementiert man normalerweise speziell hierfür. wie sich herausstellt, sind die methoden vorhanden. aus irgendeinem grund (der noch zu finden ist) kommt es also zu dem zustand, dass der parser-generator die benötigten methoden in der PsiImplUtil-klasse nicht findet und daher der generierte code unvollständig ist und es infolgedessen zu fehlermeldungen kommt.
+
+- nach einem erneuten generieren des parser sieht es so aus, als wäre das problem behoben.
