@@ -93,5 +93,8 @@
 
         <liveTemplateContext implementation="de.rholambdapi.o2a.intellij.lang.oberon2.liveTemplates.OberonContext"
                              contextId="Oberon"/>
+
+        <codeInsight.template.postfixTemplateProvider language="Oberon"
+                                                      implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.template.postfix.Oberon2PostfixTemplateProvider" />
     </extensions>
 </idea-plugin>
