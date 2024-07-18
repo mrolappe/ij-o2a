@@ -1,0 +1,16 @@
+#set($StartIdx = $NAME.lastIndexOf("/") + 1)
+#if($StartIdx < 0) #set($StartIdx = 0) #end
+
+#set($EndIdx = $NAME.indexOf("."))
+
+#if($EndIdx < 0)
+    #set($ModuleName = ${NAME.substring($StartIdx)})
+#else
+    #set($ModuleName = ${NAME.substring($StartIdx, $EndIdx)})
+#end
+
+
+MODULE ${ModuleName};
+BEGIN
+    #[[$END$]]#
+END ${ModuleName}.
