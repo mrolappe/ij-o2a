@@ -1,8 +1,81 @@
 <templateSet group="Oberon">
-  <template name="proc" value="PROCEDURE $PROC_NAME$();&#10;BEGIN&#10;$END$&#10;END $PROC_NAME$;&#10;" description="Oberon procedure" toReformat="false" toShortenFQNames="true">
-    <variable name="PROC_NAME" expression="" defaultValue="" alwaysStopAt="true" />
-    <context>
-      <option name="OBERON" value="true" />
-    </context>
-  </template>
+    <template name="module" value="MODULE $ModuleName$;&#10;&#10;BEGIN&#10;    $END$&#10;END $ModuleName$." description="Insert an empty module" toReformat="false" toShortenFQNames="true">
+        <variable name="ModuleName" expression="snakeCase(fileNameWithoutExtension())" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="procedure" value="PROCEDURE $ProcedureName$();&#10;BEGIN&#10;    $END$&#10;END $ProcedureName$;&#10;" description="Insert an empty procedure" toReformat="false" toShortenFQNames="true">
+        <variable name="ProcedureName" expression="&quot;UnnamedProcedure&quot;" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="if" value="IF $Expression$ THEN&#10;    $Then$&#10;END;&#10;" description="Insert an IF statement" toReformat="false" toShortenFQNames="true">
+        <variable name="Expression" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Then" expression="" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="if-else" value="IF $Expression$ THEN&#10;    $Then$&#10;ELSE&#10;    $Else$&#10;END;" description="Insert an IF statement with an ELSE" toReformat="false" toShortenFQNames="true">
+        <variable name="Expression" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Then" expression="&quot;Then&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Else" expression="&quot;Else&quot;" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="while" value="WHILE $Expression$ DO&#10;    $Statement$&#10;END;" description="Insert a WHILE statement" toReformat="false" toShortenFQNames="true">
+        <variable name="Expression" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Statement" expression="&quot;Halt&quot;" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="loop" value="LOOP&#10;    $END$&#10;END;" description="Insert a LOOP statement" toReformat="false" toShortenFQNames="true">
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="for" value="FOR $IdxVar$ := $Begin$ TO $End$ DO&#10;    $END$&#10;END;" description="Insert a FOR statement" toReformat="false" toShortenFQNames="true">
+        <variable name="IdxVar" expression="&quot;i&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Begin" expression="&quot;0&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="End" expression="&quot;0&quot;" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="case" value="CASE $Expression$ OF&#10;    $Const$: $Statement$&#10;END;&#10;" description="Insert a CASE statement" toReformat="false" toShortenFQNames="true">
+        <variable name="Expression" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Const" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Statement" expression="&quot;NOP&quot;" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="case-else" value="CASE $Expression$ OF&#10;    $Const$: $Statement$&#10;    | ELSE $Else$&#10;END;&#10;" description="Insert a CASE statement with an ELSE" toReformat="false" toShortenFQNames="true">
+        <variable name="Expression" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Const" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Statement" expression="&quot;NOP&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="Else" expression="&quot;NOP&quot;" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="repeat" value="REPEAT&#10;    $END$&#10;UNTIL $Expression$" description="Insert a REPEAT statement" toReformat="false" toShortenFQNames="true">
+        <variable name="Expression" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
+    <template name="if-elsif" value="IF $IfExpression$ THEN&#10;    $IfThen$&#10;ELSIF $ElsIfExpression$ THEN&#10;    $ElsIfThen$&#10;END;" description="Insert an IF statement with an ELSIF" toReformat="false" toShortenFQNames="true">
+        <variable name="IfExpression" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="IfThen" expression="&quot;NOP&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="ElsIfExpression" expression="&quot;TRUE&quot;" defaultValue="" alwaysStopAt="true" />
+        <variable name="ElsIfThen" expression="&quot;NOP&quot;" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="Oberon" value="true" />
+        </context>
+    </template>
 </templateSet>
