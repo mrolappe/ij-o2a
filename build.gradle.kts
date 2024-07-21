@@ -23,7 +23,12 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
-//    implementation(libs.exampleLibrary)
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.1")
+
+    testImplementation(libs.kotestRunner)
+    testImplementation(libs.kotestAssertionsCore)
+    //    implementation(libs.exampleLibrary)
 }
 
 // Set the JVM language level used to build the project.
@@ -33,6 +38,10 @@ kotlin {
 
 sourceSets.main {
     java.srcDir("src/main/gen")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
 
 idea {

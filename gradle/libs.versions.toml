@@ -8,9 +8,12 @@ changelog = "2.4.0"
 gradleIntelliJPlugin = "1.17.4"
 qodana = "2025.2.2"
 kover = "0.9.3"
+junit5 = "5.9.0"
 
 [libraries]
 exampleLibrary = { group = "com.example", name = "exampleLibrary", version.ref = "exampleLibrary" }
+kotestRunner = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "junit5" }
+kotestAssertionsCore = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "junit5" }
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
