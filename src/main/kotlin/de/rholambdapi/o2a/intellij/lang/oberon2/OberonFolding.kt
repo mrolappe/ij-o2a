@@ -82,9 +82,10 @@ class OberonHeaderCommentFoldingBuilder : FoldingBuilderEx(), DumbAware {
             return FoldingDescriptor.EMPTY_ARRAY
         }
 
-        val endOffset = when (headerElements.last().elementType) {
-            TokenType.WHITE_SPACE -> headerElements.get(headerElements.lastIndex - 1).endOffset
-            else -> headerElements.last().endOffset
+        val endOffset = if (headerElements.size > 1 && headerElements.last().elementType == TokenType.WHITE_SPACE) {
+            headerElements.get(headerElements.lastIndex - 1).endOffset
+        } else {
+            headerElements.last().endOffset
         }
 
         val headerTextRange = TextRange(headerElements.first().startOffset, endOffset)
