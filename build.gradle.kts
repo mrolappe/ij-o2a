@@ -114,6 +114,10 @@ tasks {
         }
     }
 
+    runIde {
+        systemProperty("idea.log.debug", "true")
+        systemProperty("idea.log.debug.categories", "de.rholambdapi.o2a.intellij.lang.oberon2")
+    }
     // Configure UI tests plugin
     // Read more: https://github.com/JetBrains/intellij-ui-test-robot
     runIdeForUiTests {
