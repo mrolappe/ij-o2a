@@ -96,5 +96,8 @@
 
         <codeInsight.template.postfixTemplateProvider language="Oberon"
                                                       implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.template.postfix.Oberon2PostfixTemplateProvider" />
+        <fileType name="OBERON-A_SYM" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonASymFileType"
+            extensions="sym" fieldName="INSTANCE" />
+        <filetype.decompiler filetype="OBERON-A_SYM" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonASymFileDecompiler" />
     </extensions>
 </idea-plugin>
