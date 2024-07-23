@@ -96,6 +96,8 @@
 
         <codeInsight.template.postfixTemplateProvider language="Oberon"
                                                       implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.template.postfix.Oberon2PostfixTemplateProvider" />
+        <fileBasedIndex implementation="de.rholambdapi.o2a.intellij.lang.oberon2.indexing.MyFileBasedIndex"/>
+
         <fileTypeDetector implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonFileTypeDetector"/>
 
         <additionalLibraryRootsProvider
