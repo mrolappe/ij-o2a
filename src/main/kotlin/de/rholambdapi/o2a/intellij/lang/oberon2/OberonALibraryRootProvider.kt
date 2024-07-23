@@ -15,7 +15,7 @@ import java.util.function.BooleanSupplier
 import javax.swing.Icon
 
 private val log = logger<OberonALibraryRootProvider>()
-private val libraryFileRegex = Regex(".*\\.(mode|o(bjs)?|sym)", RegexOption.IGNORE_CASE)
+private val libraryFileRegex = Regex(".*\\.(mod|o(bjs)?|sym)", RegexOption.IGNORE_CASE)
 
 class OberonALibraryRootProvider : AdditionalLibraryRootsProvider() {
     override fun getAdditionalProjectLibraries(project: Project): MutableCollection<SyntheticLibrary> {
@@ -34,7 +34,13 @@ class OberonALibraryRootProvider : AdditionalLibraryRootsProvider() {
                 !isDir && !filename.matches(libraryFileRegex)
             }
 
-            val library = SyntheticLibrary.newImmutableLibrary("Oberon-A Library", sourceRoots, binaryRoots, emptySet(), exclCond);
+            val library = SyntheticLibrary.newImmutableLibrary(
+                "Oberon-A Library",
+                sourceRoots,
+                binaryRoots,
+                emptySet(),
+                exclCond
+            );
 
             log.debug("library: $library")
             return mutableListOf(library)
