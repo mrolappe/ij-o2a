@@ -95,7 +95,11 @@
                              contextId="Oberon"/>
 
         <codeInsight.template.postfixTemplateProvider language="Oberon"
-                                                      implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.template.postfix.Oberon2PostfixTemplateProvider" />
+                                                      implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.template.postfix.Oberon2PostfixTemplateProvider"/>
+
+        <lang.surroundDescriptor language="Oberon"
+                                 implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.surround.Oberon2SurroundDescriptor"/>
+
         <fileBasedIndex implementation="de.rholambdapi.o2a.intellij.lang.oberon2.indexing.MyFileBasedIndex"/>
 
         <fileTypeDetector implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonFileTypeDetector"/>
