@@ -104,5 +104,9 @@
         <fileType name="OBERON-A_SYM" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonASymFileType"
             extensions="sym" fieldName="INSTANCE" />
         <filetype.decompiler filetype="OBERON-A_SYM" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonASymFileDecompiler" />
+
+        <codeBlockProvider language="Oberon" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.Oberon2CodeBlockProvider" />
+
+        <codeBlockSupportHandler language="Oberon" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.Oberon2CodeBlockSupportHandler" />
     </extensions>
 </idea-plugin>
