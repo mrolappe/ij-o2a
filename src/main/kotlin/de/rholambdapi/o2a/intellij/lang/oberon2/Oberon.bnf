@@ -124,54 +124,60 @@ file ::=
 
 module_def ::=
     module_head
-//    [ ene_mene_miste ]
+    top_level_decls
+    module_tail
+//    | recover_top_level
+    {
+//        pin=1
+        name="module definition"
+        implements="com.intellij.psi.NavigatablePsiElement"
+        methods=[getName getPresentation]
+//        recoverWhile="recover_top_level"
+    }
+//private recover_top_level ::= !(PROCEDURE)
+
+top_level_decls ::=
+    decl*
+
+module_head ::=
+    MODULE
+    // Oberon-A notation: specifies default system flag for module
+        [ '[' INT_LIT ']' ]
+        /*module_def_name*/ IDENT
+        [ '[' STR_LIT ( ',' STR_LIT )* ']' ]    // names of external object files
+    ';'
     [ import_list ]
-    decl_seq
+//    | recover_module_head
+    { pin=1 name="module head" recoverWhile="recover_module_head" methods=[moduleName="IDENT"]}
+
+private recover_module_head ::= !(IMPORT) recover_top_level
+
+module_tail ::=
     [ module_init ]
     // &<<amiga_oberon_mode>>
     [ 'CLOSE'           // AmigaOberon
         stmt_seq ]
     'END' IDENT '.'
-    {
-        name="module definition"
-        implements="com.intellij.psi.NavigatablePsiElement"
-        methods=[getName]
-    }
+    { pin=1 }
 
-private ene_mene_miste ::=
-    UNTRACED loop WITH POINTER
-    { pin=2  recoverWhile=recover_ene }
-
-private loop ::=
-    LOOP IDENT REPEAT
-
-private recover_ene ::=
-    !(BEGIN | IMPORT)
-
-private module_head ::=
-    'MODULE' module_def_name ';'
-    // Oberon-A notation: specifies default system flag for module
-    | 'MODULE'
-        [ '[' INT_LIT ']' ]
-        module_def_name
-        [ '[' STR_LIT ( ',' STR_LIT )* ']' ]    // names of external object files
-        ';'
 module_init ::=
     'BEGIN'
     [ stmt_seq ]
-    {
-        name="module initializer"
-        }
+    { name="module initializer" pin=1}
 
-module_def_name ::= IDENT
-    {
-        implements="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonNamedElement"
-        mixin="de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.OberonNamedElementImpl"
-        methods=[moduleName="IDENT" getName setName getNameIdentifier getPresentation]
-    }
+//private module_def_name ::= IDENT
+//    {
+//        implements="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonNamedElement"
+//        mixin="de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.OberonNamedElementImpl"
+//        methods=[moduleName="IDENT" getName setName getNameIdentifier getPresentation]
+//    }
 
 import_list ::=
-    'IMPORT' import_decl ( ',' import_decl )* ';'
+    'IMPORT' import_decls ';' { pin=1 }
+
+import_decls ::= import_decl ( ',' import_decl )*
+    { recoverWhile="recover_import_list" pin(".*")=1 }
+private recover_import_list ::= !(SEMI | BEGIN | CONST | PROCEDURE | TYPE | VAR)
 
 import_decl ::= [ import_alias ] import_module_reference
 
@@ -301,12 +307,18 @@ procedure_decl ::=
     [ receiver ]
     proc_decl_name
     [ formal_params ] ';'
-    decl_seq
-    [ 'BEGIN'
-        [ stmt_seq ] ]
+    decl*
+    procedure_decl_body_block
+    { pin=7 methods=[markedForExport] }
+
+procedure_decl_body_block ::=
+    [ procedure_decl_body ]
     'END' IDENT ';'
-    { methods=[markedForExport]
-    }
+    { pin(".*")=1 name="procedure body"}
+
+procedure_decl_body ::= 'BEGIN'
+        [ stmt_seq ]
+        { pin=1 }
 
 // Amiga Oberon
 amiga_oberon_shared_lib_proc_decl ::=
@@ -346,7 +358,7 @@ proc_decl_name ::=
     {
         implements="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonNamedElement"
         mixin="de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.OberonNamedElementImpl"
-        methods=[procedureName="IDENT" setName getNameIdentifier]
+        methods=[procedureName="IDENT" getName setName getNameIdentifier getIcon]
     }
 
 export_mark ::=
@@ -383,9 +395,8 @@ receiver_type ::=
 forward_decl ::=
     'PROCEDURE' '^' [ receiver ] ident_def [ formal_params ]
 
-private decl_seq ::=
-    (
-        const_section
+
+private decl ::= const_section
         | type_section
         | var_section
         | procedure_decl
@@ -394,7 +405,8 @@ private decl_seq ::=
         | amiga_oberon_external_proc_decl
         | oberon_a_lib_proc_decl
         | oberon_a_external_proc_decl
-    )*
+private recover_decl_seq ::= !(BEGIN | CONST | TYPE | VAR | PROCEDURE)
+//private decl_error ::= recover_decl_seq { pin=1 recoverWhile=recover_decl_seq}
 
 type_section ::= 'TYPE' ( type_decl ';' )*
 
