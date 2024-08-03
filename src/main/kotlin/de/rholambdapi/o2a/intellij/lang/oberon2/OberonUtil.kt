@@ -10,9 +10,9 @@ import com.intellij.psi.SyntaxTraverser
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTreeUtil
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonOberonALibProcDecl
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypeDeclName
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonVarDeclName
+import com.intellij.psi.util.descendantsOfType
+import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*
+import de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.moduleName
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.procedureNameMatches
 
 private val logger = Logger.getInstance(OberonUtil::class.java)
@@ -22,34 +22,34 @@ internal fun logDebug(message: String) {
 }
 
 internal object OberonUtil {
-    fun findProcedures(project: Project, procName: String): List<de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDecl> {
+    fun findProcedures(project: Project, procName: String): List<OberonProcedureDecl> {
         // TODO
-        return emptyList<de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDecl>()
+        return emptyList()
     }
 
 
-    fun findProcedures(project: Project): List<de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDecl> {
+    fun findProcedures(project: Project): List<OberonProcedureDecl> {
         TODO("Not yet implemented")
     }
 
-    fun findAllModules(project: Project): List<de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDef> {
+    fun findAllModules(project: Project): List<OberonModuleDef> {
         val oberonFiles = getAllOberonFilesInProject(project)
         val psiManager = PsiManager.getInstance(project)
 
         return oberonFiles.mapNotNull { psiManager.findFile(it) }
             .flatMap { file ->
-                val moduleDefs = PsiTreeUtil.getChildrenOfTypeAsList(file, de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDef::class.java)
+                val moduleDefs = PsiTreeUtil.getChildrenOfTypeAsList(file, OberonModuleDef::class.java)
                 moduleDefs
             }
     }
 
-    fun findModulesByName(project: Project, name: String): List<de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDef> {
+    fun findModulesByName(project: Project, name: String): List<OberonModuleDef> {
         val oberonFiles = getAllOberonFilesInProject(project)
         val psiManager = PsiManager.getInstance(project)
 
         return oberonFiles.mapNotNull { vfile -> psiManager.findFile(vfile) }
             .flatMap { file ->
-                PsiTreeUtil.getChildrenOfTypeAsList(file, de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDef::class.java)
+                PsiTreeUtil.getChildrenOfTypeAsList(file, OberonModuleDef::class.java)
                     .filterNotNull()
                     .filter { it.moduleDefName.moduleName.text!! == name }
             }
@@ -61,9 +61,9 @@ internal object OberonUtil {
         return oberonFiles
     }
 
-    fun findImportedProcedure(file: PsiFile, moduleOrAliasName: String, procedureName: String): de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDecl? {
-        PsiTreeUtil.findChildOfType(file, de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonImportList::class.java)?.let { imports ->
-            val importDecl = PsiTreeUtil.findChildrenOfType(imports, de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonImportDecl::class.java)
+    fun findImportedProcedure(file: PsiFile, moduleOrAliasName: String, procedureName: String): OberonProcedureDecl? {
+        PsiTreeUtil.findChildOfType(file, OberonImportList::class.java)?.let { imports ->
+            val importDecl = PsiTreeUtil.findChildrenOfType(imports, OberonImportDecl::class.java)
                 .firstOrNull { decl ->
 //                    println("decl, importAlias: ${decl.importAlias?.aliasName?.text}, importModuleReference: ${decl.importModuleReference.text}")
                     decl.importAlias?.aliasName?.textMatches(moduleOrAliasName) ?: false
@@ -86,14 +86,14 @@ internal object OberonUtil {
         return null
     }
 
-    fun findAllTypes(project: Project): Collection<de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypeDecl> {
+    fun findAllTypes(project: Project): Collection<OberonTypeDecl> {
         val psiManager = PsiManager.getInstance(project)
 
         return getAllOberonFilesInProject(project)
             .mapNotNull { psiManager.findFile(it) }
             .flatMap { psiFile ->
                 val children = SyntaxTraverser.psiTraverser(psiFile)
-                    .filter(de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypeDecl::class.java)
+                    .filter(OberonTypeDecl::class.java)
                     .toList()
 //                val children = PsiTreeUtil.getChildrenOfTypeAsList(psiFile, OberonTypeDecl::class.java)
                 println("type decl children #: ${children.size}")
@@ -101,7 +101,7 @@ internal object OberonUtil {
             }
     }
 
-    fun findTypesByName(project: Project, name: String): Collection<de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypeDecl> {
+    fun findTypesByName(project: Project, name: String): Collection<OberonTypeDecl> {
         val psiManager = PsiManager.getInstance(project)
 
         return getAllOberonFilesInProject(project)
@@ -109,7 +109,7 @@ internal object OberonUtil {
             .flatMap { psiFile ->
 //                PsiTreeUtil.getChildrenOfTypeAsList(psiFile, OberonTypeDecl::class.java)
                 val children = SyntaxTraverser.psiTraverser(psiFile)
-                    .filter(de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypeDecl::class.java)
+                    .filter(OberonTypeDecl::class.java)
                     .filter { typeDecl -> typeDecl != null && name.equals(typeName(typeDecl), ignoreCase = true) }
                     .toList()
                 println("OberonUtil::findTypesByName, name: $name -> $children")
@@ -118,12 +118,12 @@ internal object OberonUtil {
 //            .filter { typeDecl -> typeDecl != null && name.equals(typeName(typeDecl), ignoreCase = true) }
     }
 
-    fun typeName(typeDecl: de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypeDecl): @NlsSafe String? =
+    fun typeName(typeDecl: OberonTypeDecl): @NlsSafe String? =
         typeDecl.typeDeclName.typeName.text
 }
 
-fun findProcedureDeclNameInFile(file: PsiFile, procedureName: String, exportedOnly: Boolean = true): de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDecl? {
-    val procedureDecl = PsiTreeUtil.findChildrenOfType(file, de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDecl::class.java)
+fun findProcedureDeclNameInFile(file: PsiFile, procedureName: String, exportedOnly: Boolean = true): OberonProcedureDecl? {
+    val procedureDecl = PsiTreeUtil.findChildrenOfType(file, OberonProcedureDecl::class.java)
         .filterNotNull()
         .firstOrNull { it.procedureNameMatches(procedureName) }
 
@@ -133,8 +133,8 @@ fun findProcedureDeclNameInFile(file: PsiFile, procedureName: String, exportedOn
     return procedureDecl
 }
 
-fun findConstDeclNameExportedByModule(constantName: String, moduleDef: de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDef): de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonConstDeclName? {
-    return moduleDef.constSectionList.asSequence()
+fun findConstDeclNameExportedByModule(constantName: String, moduleDef: OberonModuleDef): OberonConstDeclName? {
+    return moduleDef.constSections.asSequence()
         .flatMap { it.constDeclList }
         .map { it.constDeclName }
         .filter {
