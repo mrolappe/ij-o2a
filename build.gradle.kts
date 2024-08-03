@@ -22,6 +22,7 @@ repositories {
     mavenCentral()
     intellijPlatform {
         defaultRepositories()
+        jetbrainsRuntime()
     }
 }
 
@@ -32,11 +33,11 @@ dependencies {
     intellijPlatform {
         val type = properties("platformType")
         val version = properties("platformVersion")
-        create(type, version)
+        create(type, version, useInstaller = false)
 
         plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
         bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
-
+        jetbrainsRuntime()
         pluginVerifier()
         zipSigner()
         instrumentationTools()
