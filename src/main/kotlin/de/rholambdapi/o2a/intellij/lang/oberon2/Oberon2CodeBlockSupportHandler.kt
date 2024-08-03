@@ -5,19 +5,11 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.*
-
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonCaseStmt
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonElseBranch
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonElsifBranch
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonIfStmt
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonLoopStmt
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDecl
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypes
-import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonWhileStmt
+import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*
 
 private val codeBlockTypes = arrayOf(
     OberonIfStmt::class, OberonCaseStmt::class, OberonWhileStmt::class, OberonLoopStmt::class,
-    OberonProcedureDecl::class
+    OberonProcedureDecl::class, OberonModuleInit::class
 )
 
 internal fun nearestSurroundingCodeBlockElement(elementAtCursor: PsiElement) =
@@ -33,6 +25,7 @@ class Oberon2CodeBlockSupportHandler : CodeBlockSupportHandler {
                     is OberonCaseStmt -> markerRanges.addAll(markerRangesForSurroundingCase(elementAtCursor))
                     is OberonIfStmt -> markerRanges.addAll(markerRangesForSurroundingIf(elementAtCursor))
                     is OberonLoopStmt -> markerRanges.addAll(markerRangesForSurroundingLoop(elementAtCursor))
+                    is OberonModuleInit -> markerRanges.addAll(markerRangesForModuleInit(elementAtCursor))
                     is OberonProcedureDecl -> markerRanges.addAll(markerRangesForSurroundingProcedure(elementAtCursor))
                     is OberonWhileStmt -> markerRanges.addAll(markerRangesForSurroundingWhile(elementAtCursor))
                 }
@@ -47,11 +40,10 @@ class Oberon2CodeBlockSupportHandler : CodeBlockSupportHandler {
             OberonTypes.LOOP ->
                 markerRanges.addAll(markerRangesForSurroundingLoop(elementAtCursor))
 
-            OberonTypes.PROCEDURE, OberonTypes.BEGIN -> markerRanges.addAll(
-                markerRangesForSurroundingProcedure(
-                    elementAtCursor
-                )
-            )
+            OberonTypes.PROCEDURE, OberonTypes.BEGIN -> {
+                markerRanges.addAll(markerRangesForSurroundingProcedure(elementAtCursor))
+                markerRanges.addAll(markerRangesForModuleInit(elementAtCursor))
+            }
 
             OberonTypes.WHILE -> markerRanges.addAll(markerRangesForSurroundingWhile(elementAtCursor))
         }
@@ -59,8 +51,19 @@ class Oberon2CodeBlockSupportHandler : CodeBlockSupportHandler {
         return markerRanges
     }
 
+    private fun markerRangesForModuleInit(elementAtCursor: PsiElement): Collection<TextRange> {
+        val markerRanges = mutableListOf<TextRange>()
 
-    private fun markerRangesForSurroundingLoop(elementAtCursor: PsiElement): MutableList<TextRange> {
+        val moduleInit = elementAtCursor.parentOfType<OberonModuleInit>(withSelf = false) ?: return markerRanges
+        moduleInit.descendants(childrenFirst = true) { it == moduleInit }
+            .firstOrNull { it.elementType == OberonTypes.BEGIN }?.let { markerRanges.add(it.textRange) }
+        moduleInit.nextLeaf { it.elementType == OberonTypes.END }?.let { markerRanges.add(it.textRange) }
+
+        return markerRanges
+    }
+
+
+    private fun markerRangesForSurroundingLoop(elementAtCursor: PsiElement): List<TextRange> {
         val markerRanges = mutableListOf<TextRange>()
 
         elementAtCursor.parentOfType<OberonLoopStmt>()
@@ -71,15 +74,25 @@ class Oberon2CodeBlockSupportHandler : CodeBlockSupportHandler {
         return markerRanges
     }
 
-    private val procedureBlockTokenSet = TokenSet.create(OberonTypes.PROCEDURE, OberonTypes.BEGIN, OberonTypes.END)
+    private val tokensToMarkInProcedureBlock = TokenSet.create(OberonTypes.BEGIN, OberonTypes.END)
 
     private fun markerRangesForSurroundingProcedure(elementAtCursor: PsiElement): MutableList<TextRange> {
         val markerRanges = mutableListOf<TextRange>()
 
         val procedureDecl = elementAtCursor.parentOfType<OberonProcedureDecl>() ?: return markerRanges
-        procedureDecl.descendants(childrenFirst = true, canGoInside = { it is OberonProcedureDecl })
-            .filter { child -> procedureBlockTokenSet.contains(child.elementType) }
-            .mapTo(markerRanges, PsiElement::getTextRange)
+        procedureDecl.descendants(childrenFirst = true) { it == procedureDecl }
+            .firstOrNull { it.elementType == OberonTypes.PROCEDURE }
+            ?.let { markerRanges.add(it.textRange) }
+
+        val bodyBlock = procedureDecl.procedureDeclBodyBlock ?: return markerRanges
+        val procedureDeclBody = bodyBlock.procedureDeclBody ?: return markerRanges
+
+        procedureDeclBody.descendants(childrenFirst = true) { it == procedureDeclBody }
+            .firstOrNull() { it.elementType == OberonTypes.BEGIN }
+            ?.let { markerRanges.add(it.textRange) }
+
+        bodyBlock.lastChild.prevLeaf { it.elementType == OberonTypes.END }
+            ?.let { markerRanges.add(it.textRange) }
 
         return markerRanges
     }
