@@ -5,6 +5,7 @@ import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.fileTypes.SyntaxHighlighterBase
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
+import de.rholambdapi.o2a.intellij.lang.oberon2.OberonSyntaxHighlighterColors.SEMICOLON
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypes.*
 
 class OberonSyntaxHighlighter : SyntaxHighlighterBase() {
@@ -73,6 +74,8 @@ class OberonSyntaxHighlighter : SyntaxHighlighterBase() {
             ATTRIBUTES[REAL_LIT] = OberonSyntaxHighlighterColors.NUMBER
             ATTRIBUTES[COLON_EQUALS] = OberonSyntaxHighlighterColors.OPERATION_SIGN
             ATTRIBUTES[PROC_CALL_STMT] = OberonSyntaxHighlighterColors.FUNCTION_CALL
+            ATTRIBUTES[SEMI] = SEMICOLON;
+            ATTRIBUTES[PSEUDO_COMMENT] = OberonSyntaxHighlighterColors.PSEUDO_COMMENT
 //        fillMap(ATTRIBUTES, ASSIGNMENT_OPERATORS, DartSyntaxHighlighterColors.OPERATION_SIGN);
 //        fillMap(ATTRIBUTES, BINARY_OPERATORS, DartSyntaxHighlighterColors.OPERATION_SIGN);
 //        fillMap(ATTRIBUTES, UNARY_OPERATORS, DartSyntaxHighlighterColors.OPERATION_SIGN);
@@ -84,7 +87,6 @@ class OberonSyntaxHighlighter : SyntaxHighlighterBase() {
 //        ATTRIBUTES.put(DOT_DOT, DartSyntaxHighlighterColors.DOT);
 //        ATTRIBUTES.put(QUEST_DOT_DOT, DartSyntaxHighlighterColors.DOT);
 //        ATTRIBUTES.put(QUEST_DOT, DartSyntaxHighlighterColors.DOT);
-//        ATTRIBUTES.put(SEMICOLON, DartSyntaxHighlighterColors.SEMICOLON);
 //        ATTRIBUTES.put(COLON, DartSyntaxHighlighterColors.COLON);
 //        ATTRIBUTES.put(EXPRESSION_BODY_DEF, DartSyntaxHighlighterColors.FAT_ARROW);
 //
