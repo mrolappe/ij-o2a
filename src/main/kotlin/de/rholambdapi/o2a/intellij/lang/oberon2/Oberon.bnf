@@ -323,8 +323,13 @@ procedure_decl ::=
 
 procedure_decl_body_block ::=
     [ procedure_decl_body ]
-    'END' IDENT ';'
+    procedure_decl_tail
     { pin(".*")=1 name="procedure body"}
+
+procedure_decl_tail ::= 'END' IDENT ';'
+    {
+        methods=[endIdentifier="IDENT" getReference]
+    }
 
 procedure_decl_body ::= 'BEGIN'
         [ stmt_seq ]

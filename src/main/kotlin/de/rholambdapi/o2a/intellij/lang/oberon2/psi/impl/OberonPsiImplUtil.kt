@@ -313,7 +313,21 @@ object OberonPsiImplUtil {
     @JvmStatic
     fun getReference(referencingElement: OberonAmigaOberonSharedLibLvData): PsiReference {
 //        System.err.println("OberonPsiImplUtil::getReference(OberonOberonASharedLibLvData)")
-        return OberonSharedLibBaseVarReference(referencingElement, referencingElement.baseVarName.text, referencingElement.baseVarName.textRangeInParent)
+        return OberonSharedLibBaseVarReference(
+            referencingElement,
+            referencingElement.baseVarName.text,
+            referencingElement.baseVarName.textRangeInParent
+        )
+    }
+
+    @JvmStatic
+    fun getReference(referencingElement: OberonProcedureDeclTail): PsiReference {
+        return EndIdentifierReference(referencingElement)
+    }
+
+    @JvmStatic
+    fun getReference(referencingElement: OberonModuleTail): PsiReference {
+        return EndIdentifierReference(referencingElement)
     }
 
     @JvmStatic
