@@ -1,5 +1,5 @@
 package de.rholambdapi.o2a.intellij.lang.oberon2.psi
 
-import com.intellij.psi.PsiNameIdentifierOwner
+import com.intellij.psi.PsiNamedElement
 
-interface OberonNamedElement : PsiNameIdentifierOwner
+interface OberonNamedElement : PsiNamedElement

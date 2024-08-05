@@ -130,8 +130,9 @@ module_def ::=
     {
 //        pin=1
         name="module definition"
-        implements="com.intellij.psi.NavigatablePsiElement"
-        methods=[getName getPresentation]
+        implements="Oberon2ModuleElement"
+        mixin="Oberon2ElementMixin"
+        methods=[getName setName getNameIdentifier getPresentation getIcon]
 //        recoverWhile="recover_top_level"
     }
 //private recover_top_level ::= !(PROCEDURE)
@@ -148,7 +149,12 @@ module_head ::=
     ';'
     [ import_list ]
 //    | recover_module_head
-    { pin=1 name="module head" recoverWhile="recover_module_head" methods=[moduleName="IDENT"]}
+    {
+        pin=3 name="module head" recoverWhile="recover_module_head"
+        implements="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonNamedElement"
+        mixin="de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.OberonNamedElementImpl"
+        methods=[moduleName="IDENT" getName setName getNameIdentifier getPresentation]
+    }
 
 private recover_module_head ::= !(IMPORT) recover_top_level
 
@@ -158,7 +164,7 @@ module_tail ::=
     [ 'CLOSE'           // AmigaOberon
         stmt_seq ]
     'END' IDENT '.'
-    { pin=1 }
+    { pin=1 methods=[endIdentifier="IDENT" getReference]}
 
 module_init ::=
     'BEGIN'
@@ -297,7 +303,6 @@ reg_spec ::= '[' const_expr ']'
 
 var_decl ::=
     var_decl_name_list
-//    <<pling_plong "var_decl var_decl_name_list" >>
     ':' type_spec ';'
 
 procedure_decl ::=
@@ -309,7 +314,12 @@ procedure_decl ::=
     [ formal_params ] ';'
     decl*
     procedure_decl_body_block
-    { pin=7 methods=[markedForExport] }
+    {
+        pin=7
+        methods=[markedForExport getNameIdentifier setName getIcon]
+        implements="Oberon2ProcedureElement"
+        mixin="Oberon2ElementMixin"
+    }
 
 procedure_decl_body_block ::=
     [ procedure_decl_body ]
@@ -358,7 +368,7 @@ proc_decl_name ::=
     {
         implements="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonNamedElement"
         mixin="de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.OberonNamedElementImpl"
-        methods=[procedureName="IDENT" getName setName getNameIdentifier getIcon]
+        methods=[procedureName="IDENT" getName setName]
     }
 
 export_mark ::=

@@ -57,25 +57,22 @@ object OberonPsiImplUtil {
     @JvmStatic
     fun getName(element: OberonReceiverName): String = element.nameIdentifier.text
 
-     @JvmStatic
-    fun setName(element: OberonModuleDef, newName: String): PsiElement {
-        println("TODO OberonPsiImplUtil::setName, OberonModuleDef element: $element, newName: $newName")
-        element.node.findChildByType(OberonTypes.IDENT)?.also {
-            // TODO
-        }
-
-        return element
-    }
-
     @JvmStatic
-    fun setName(element: OberonProcedureDecl, newName: String): PsiElement {
-        println("TODO OberonPsiImplUtil::setName, OberonProcedureDecl element: $element, newName: $newName")
-        element.node.findChildByType(OberonTypes.IDENT)?.also {
-            // TODO
-        }
-
+    fun setName(element: OberonModuleDef, newName: String): PsiElement {
+        val newHead = OberonElementFactory.createModuleHead(element.project, newName)
+        element.moduleHead.replace(newHead)
         return element
     }
+
+//    @JvmStatic
+//    fun setName(element: OberonProcedureDecl, newName: String): PsiElement {
+//        println("TODO OberonPsiImplUtil::setName, OberonProcedureDecl element: $element, newName: $newName")
+//        element.node.findChildByType(OberonTypes.IDENT)?.also {
+//            // TODO
+//        }
+//
+//        return element
+//    }
 
     @JvmStatic
     fun setName(element: OberonOberonAExternalProcDecl, newName: String): PsiElement {
@@ -138,23 +135,37 @@ object OberonPsiImplUtil {
     }
 
     @JvmStatic
-    fun setName(element: OberonProcDeclName, newName: String): PsiElement {
-        println("TODO OberonPsiImplUtil::setName, OberonProcDeclName element: $element, newName: $newName")
-        element.node.findChildByType(OberonTypes.IDENT)?.also {
-            // TODO
-        }
+    fun setName(element: OberonProcedureDecl, newName: String): PsiElement {
+        log.debug("setName, proc decl: $element, newName: $newName")
 
+        setName(element.procDeclName, newName)
         return element
     }
 
     @JvmStatic
-    fun setName(element: OberonModuleDefName, newName: String): PsiElement {
-        println("TODO OberonPsiImplUtil::setName, OberonModuleDefName element: $element, newName: $newName")
-        element.node.findChildByType(OberonTypes.IDENT)?.also {
-            // TODO
-        }
+    fun setName(element: OberonProcDeclName, newName: String): PsiElement {
+        log.debug("setName, proc decl name: $element, newName: $newName")
 
-        return element
+        return OberonElementFactory.createEmptyNoArgProcedure(element.project, newName).nameIdentifier?.let {
+            element.replace(it)
+        } ?: element
+    }
+
+//    @JvmStatic
+//    fun setName(element: OberonModuleDefName, newName: String): PsiElement {
+//        println("TODO OberonPsiImplUtil::setName, OberonModuleDefName element: $element, newName: $newName")
+//        element.node.findChildByType(OberonTypes.IDENT)?.also {
+//            // TODO
+//        }
+//
+//        return element
+//    }
+
+    @JvmStatic
+    fun setName(element: OberonModuleHead, newName: String): PsiElement {
+        val newElement = OberonElementFactory.createModuleHead(element.project, newName).moduleName
+
+        return newElement?.let { element.moduleName?.replace(it) } ?: element
     }
 
     @JvmStatic
@@ -188,12 +199,11 @@ object OberonPsiImplUtil {
     }
 
     @JvmStatic
-    fun getNameIdentifier(element: OberonProcedureDecl): PsiElement =
+    fun getNameIdentifier(element: OberonProcedureDecl): PsiElement? =
         element.procDeclName
 
     @JvmStatic
-    fun getNameIdentifier(element: OberonModuleDef): PsiElement? = element.node.findChildByType(
-        OberonTypes.IDENT)?.psi
+    fun getNameIdentifier(element: OberonModuleDef): PsiElement? = element.moduleHead.moduleName
 
     @JvmStatic
     fun getNameIdentifier(element: OberonOberonAExternalProcDecl): PsiElement = element.procDeclName.procedureName
@@ -216,8 +226,11 @@ object OberonPsiImplUtil {
     @JvmStatic
     fun getNameIdentifier(element: OberonProcDeclName): PsiElement = element.procedureName
 
+//    @JvmStatic
+//    fun getNameIdentifier(element: OberonModuleDefName): PsiElement = element.moduleName
+
     @JvmStatic
-    fun getNameIdentifier(element: OberonModuleDefName): PsiElement = element.moduleName
+    fun getNameIdentifier(element: OberonModuleHead): PsiElement = element.moduleName
 
     @JvmStatic
     fun getNameIdentifier(element: OberonTypeDeclName): PsiElement = element.typeName

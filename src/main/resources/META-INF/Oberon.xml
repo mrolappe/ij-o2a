@@ -114,5 +114,8 @@
         <codeBlockProvider language="Oberon" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.Oberon2CodeBlockProvider" />
 
         <codeBlockSupportHandler language="Oberon" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.Oberon2CodeBlockSupportHandler" />
+        
+        <lang.elementManipulator forClass="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDeclTail"
+                                 implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.refactoring.ProcedureDeclTailManipulator" />
     </extensions>
 </idea-plugin>
