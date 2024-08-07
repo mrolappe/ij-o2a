@@ -14,7 +14,7 @@ class ModuleLocalTopLevelDeclarationsCompletionProvider : CompletionProvider<Com
         context: ProcessingContext,
         result: CompletionResultSet
     ) {
-        result.addElement(LookupElementBuilder.create("module local top level decls"))
+//        result.addElement(LookupElementBuilder.create("module local top level decls"))
         val module = parameters.position.containingFile.moduleDef ?: return
 
         val elements = mutableListOf<LookupElement>()
