@@ -1,4 +1,4 @@
-package me.mrolappe.intellij.lang.oberon;
+package de.rholambdapi.o2a.intellij.lang.oberon2;
 
 import com.intellij.lexer.FlexLexer;
 import com.intellij.psi.tree.IElementType;
