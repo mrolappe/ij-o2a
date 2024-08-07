@@ -9,7 +9,7 @@ import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*
 
 private val codeBlockTypes = arrayOf(
     OberonIfStmt::class, OberonCaseStmt::class, OberonWhileStmt::class, OberonLoopStmt::class,
-    OberonProcedureDecl::class, OberonModuleInit::class
+    OberonProcedureDecl::class, OberonModuleTail::class
 )
 
 internal fun nearestSurroundingCodeBlockElement(elementAtCursor: PsiElement) =
@@ -25,7 +25,7 @@ class Oberon2CodeBlockSupportHandler : CodeBlockSupportHandler {
                     is OberonCaseStmt -> markerRanges.addAll(markerRangesForSurroundingCase(elementAtCursor))
                     is OberonIfStmt -> markerRanges.addAll(markerRangesForSurroundingIf(elementAtCursor))
                     is OberonLoopStmt -> markerRanges.addAll(markerRangesForSurroundingLoop(elementAtCursor))
-                    is OberonModuleInit -> markerRanges.addAll(markerRangesForModuleInit(elementAtCursor))
+                    is OberonModuleTail -> markerRanges.addAll(markerRangesForModuleInit(elementAtCursor))
                     is OberonProcedureDecl -> markerRanges.addAll(markerRangesForSurroundingProcedure(elementAtCursor))
                     is OberonWhileStmt -> markerRanges.addAll(markerRangesForSurroundingWhile(elementAtCursor))
                 }
@@ -54,10 +54,10 @@ class Oberon2CodeBlockSupportHandler : CodeBlockSupportHandler {
     private fun markerRangesForModuleInit(elementAtCursor: PsiElement): Collection<TextRange> {
         val markerRanges = mutableListOf<TextRange>()
 
-        val moduleInit = elementAtCursor.parentOfType<OberonModuleInit>(withSelf = false) ?: return markerRanges
-        moduleInit.descendants(childrenFirst = true) { it == moduleInit }
+        val moduleTail = elementAtCursor.parentOfType<OberonModuleTail>(withSelf = false) ?: return markerRanges
+        moduleTail.descendants(childrenFirst = true) { true }
             .firstOrNull { it.elementType == OberonTypes.BEGIN }?.let { markerRanges.add(it.textRange) }
-        moduleInit.nextLeaf { it.elementType == OberonTypes.END }?.let { markerRanges.add(it.textRange) }
+        moduleTail.endIdentifier?.prevLeaf { it.elementType == OberonTypes.END }?.let { markerRanges.add(it.textRange) }
 
         return markerRanges
     }
@@ -91,7 +91,7 @@ class Oberon2CodeBlockSupportHandler : CodeBlockSupportHandler {
             .firstOrNull() { it.elementType == OberonTypes.BEGIN }
             ?.let { markerRanges.add(it.textRange) }
 
-        bodyBlock.lastChild.prevLeaf { it.elementType == OberonTypes.END }
+        bodyBlock.procedureDeclTail?.firstChild
             ?.let { markerRanges.add(it.textRange) }
 
         return markerRanges
