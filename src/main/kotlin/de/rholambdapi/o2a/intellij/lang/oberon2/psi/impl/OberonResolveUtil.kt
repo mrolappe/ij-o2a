@@ -10,10 +10,13 @@ import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*
 internal fun moduleContaining(element: PsiElement): OberonModuleDef? = element.parentOfType<OberonModuleDef>()
 
 internal fun moduleNameForImportNameOrNull(module: OberonModuleDef, name: String): String? {
-    return module.importList?.importDeclList
+    return module.importList?.importDecls?.importDeclList
         ?.firstOrNull { it.importAlias?.aliasName?.textMatches(name) ?: false || it.importModuleReference.ident.textMatches(name) }
         ?.importModuleReference?.ident?.text
 }
+
+val OberonModuleDef.importList: OberonImportList?
+    get() = moduleHead.importList
 
 internal fun procedureDeclContaining(element: PsiElement): OberonProcedureDecl? {
     val parentOfType = element.parentOfType<OberonProcedureDecl>()
@@ -29,7 +32,7 @@ internal fun topLevelConstantNames(module: OberonModuleDef): List<OberonConstDec
         .flatMap { PsiTreeUtil.findChildrenOfType(it, OberonConstDeclName::class.java) }
 
 internal fun topLevelTypeDecls(module: OberonModuleDef): List<OberonTypeDecl> =
-    module.typeSectionList
+    module.topLevelDecls.typeSectionList
         .flatMap { section -> section.typeDeclList }
 
 internal fun topLevelVarDeclNames(module: OberonModuleDef): List<OberonVarDeclName> = topLevelVarSections(module)
@@ -103,7 +106,7 @@ internal fun resolveByMemberName(
 
             topLevelProcedureDeclNames(module)
                 .filter { procedureDecl -> procedureDecl.procedureNameMatches(memberName) }
-                .map { it.procDeclName }
+                .mapNotNull { it.procDeclName }
                 .let { procedureDecls -> resolveResults.addAll(procedureDecls) }
 
             topLevelTypeDecls(module)
@@ -153,7 +156,7 @@ private fun procedureLocalConstDeclNameOrNull(procedure: OberonProcedureDecl, va
 private fun procedureLocalProcDeclNameOrNull(procedure: OberonProcedureDecl, procName: String): OberonProcDeclName? {
     return procedure.procedureDeclList
         .asSequence()
-        .map { it.procDeclName }
+        .mapNotNull { it.procDeclName }
         .filter { it.procedureNameMatches(procName) }
         .firstOrNull()
 }
@@ -162,9 +165,9 @@ val OberonDesignator.designatorString: String
     get() = this.text
 
 val OberonProcedureDecl.procedureName: String?
-    get() = this.procDeclName.procedureName.text
+    get() = this.procDeclName?.procedureName?.text
 
-fun OberonProcedureDecl.procedureNameMatches(matchName: String) = this.procDeclName.procedureName.textMatches(matchName)
+fun OberonProcedureDecl.procedureNameMatches(matchName: String) = this.procDeclName?.procedureName?.textMatches(matchName) ?: false
 
 fun OberonProcDeclName.procedureNameMatches(matchName: String) = this.procedureName.textMatches(matchName)
 
