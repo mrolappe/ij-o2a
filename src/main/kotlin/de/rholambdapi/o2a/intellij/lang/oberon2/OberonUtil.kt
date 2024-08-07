@@ -51,7 +51,7 @@ internal object OberonUtil {
             .flatMap { file ->
                 PsiTreeUtil.getChildrenOfTypeAsList(file, OberonModuleDef::class.java)
                     .filterNotNull()
-                    .filter { it.moduleDefName.moduleName.text!! == name }
+                    .filter { it.moduleName?.text == name }
             }
     }
 
@@ -122,7 +122,11 @@ internal object OberonUtil {
         typeDecl.typeDeclName.typeName.text
 }
 
-fun findProcedureDeclNameInFile(file: PsiFile, procedureName: String, exportedOnly: Boolean = true): OberonProcedureDecl? {
+fun findProcedureDeclNameInFile(
+    file: PsiFile,
+    procedureName: String,
+    exportedOnly: Boolean = true
+): OberonProcedureDecl? {
     val procedureDecl = PsiTreeUtil.findChildrenOfType(file, OberonProcedureDecl::class.java)
         .filterNotNull()
         .firstOrNull { it.procedureNameMatches(procedureName) }
@@ -145,8 +149,11 @@ fun findConstDeclNameExportedByModule(constantName: String, moduleDef: OberonMod
         .firstOrNull()
 }
 
-fun findVarDeclNameExportedByModule(varName: String, moduleDef: de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDef): OberonVarDeclName? {
-    return moduleDef.varSectionList.asSequence()
+val OberonModuleDef.constSections: List<OberonConstSection>
+    get() = topLevelDecls.constSectionList
+
+fun findVarDeclNameExportedByModule(varName: String, moduleDef: OberonModuleDef): OberonVarDeclName? {
+    return moduleDef.varSections.asSequence()
         .flatMap { it.varDeclList }
         .flatMap { it.varDeclNameList.varDeclNameList }
         .filterNotNull()
@@ -154,8 +161,11 @@ fun findVarDeclNameExportedByModule(varName: String, moduleDef: de.rholambdapi.o
         .firstOrNull()
 }
 
-fun findTypeDeclNameExportedByModule(typeName: String, module: de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDef): OberonTypeDeclName? {
-    return module.typeSectionList.asSequence()
+val OberonModuleDef.varSections: List<OberonVarSection>
+    get() = topLevelDecls.varSectionList
+
+fun findTypeDeclNameExportedByModule(typeName: String, module: OberonModuleDef): OberonTypeDeclName? {
+    return module.typeSections.asSequence()
         .flatMap { it.typeDeclList }
         .filterNotNull()
         .map { it.typeDeclName }
@@ -163,22 +173,77 @@ fun findTypeDeclNameExportedByModule(typeName: String, module: de.rholambdapi.o2
         .firstOrNull()
 }
 
-fun findOberonASharedLibraryProcedureDeclExportedByModule(procedureName: String, module: de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDef): OberonOberonALibProcDecl? {
-    return module.oberonALibProcDeclList.asSequence()
-        .filterNotNull()
+val OberonModuleDef.typeSections: List<OberonTypeSection>
+    get() = topLevelDecls.typeSectionList
+
+fun findOberonASharedLibraryProcedureDeclExportedByModule(
+    procedureName: String,
+    module: OberonModuleDef
+): OberonOberonALibProcDecl? {
+    return module.oberonALibraryProcedures.asSequence()
         .filter { it.isExported && it.procedureNameMatches(procedureName) }
         .firstOrNull()
 }
 
+val OberonModuleDef.oberonALibraryProcedures: List<OberonOberonALibProcDecl>
+    get() = topLevelDecls.oberonALibProcDeclList
+
 val OberonVarDeclName.isExported
-    get() = this.exportMark != null
+    get() = readWriteExportMark != null || readOnlyExportMark != null
 
 fun OberonTypeDeclName.typeNameMatches(matchName: String) = this.typeName.textMatches(matchName)
 
 val OberonTypeDeclName.isExported
-    get() = this.exportMark != null
+    get() = readWriteExportMark != null || readOnlyExportMark != null
 
-fun OberonOberonALibProcDecl.procedureNameMatches(matchName: String) = this.procDeclName.procedureName.textMatches(matchName)
+fun OberonOberonALibProcDecl.procedureNameMatches(matchName: String) =
+    this.procDeclName.procedureName.textMatches(matchName)
 
 val OberonOberonALibProcDecl.isExported
-    get() = this.procDeclName.exportMark != null
+    get() = procDeclName.readWriteExportMark != null || procDeclName.readOnlyExportMark != null
+
+val OberonFile.moduleHead
+    get() = descendantsOfType<OberonModuleHead>(childrenFirst = true).firstOrNull()
+
+val OberonFile.importedModulesAndAliases: Map<List<OberonModuleDef>, OberonImportAlias?>
+    get() {
+        return getNamesOfImportedModules(this, true)
+            .mapKeys { (n, _) -> OberonUtil.findModulesByName(project, n) }
+            .mapValues { (_, a) -> a?.let { findImportAlias(a) } }
+    }
+
+val OberonFile.importedModules
+    get() = getNamesOfImportedModules(this, false)
+        .flatMap { (name, _) -> OberonUtil.findModulesByName(project, name) }
+
+val OberonFile.aliasedImportModules
+    get() = getNamesOfImportedModules(this, true)
+        .filter { (_, alias) -> alias != null }
+        .map { (name, alias) -> alias to OberonUtil.findModulesByName(project, name) }
+        .associate { it }
+
+val OberonFile.importAliases: Sequence<OberonImportAlias>?
+    get() = descendantsOfType<OberonImportList>().firstOrNull()
+        ?.importDecls?.importDeclList?.asSequence()
+        ?.filterNotNull()
+        ?.map { it.importAlias }
+        ?.filterNotNull()
+
+fun OberonFile.findImportAlias(name: String): OberonImportAlias? {
+    return importAliases?.firstOrNull { it.name == name }
+}
+
+fun getNamesOfImportedModules(file: PsiFile, includeAliases: Boolean = true): Map<String, String?> {
+    return file.descendantsOfType<OberonImportList>()
+        .flatMap { it.getModuleNames(includeAliases).entries }
+        .associate { it.toPair() }
+}
+
+// determine the set of module names in the import list. if requested, return the alias mapped by
+fun OberonImportList.getModuleNames(includeAliases: Boolean = true): Map<String, String?> {
+    return importDecls?.importDeclList?.mapNotNull { importDecl ->
+        val moduleName = importDecl.importModuleReference.ident.text
+        val alias = if (includeAliases) importDecl?.importAlias?.name else null
+        moduleName to alias
+    }?.toMap() ?: emptyMap()
+}
