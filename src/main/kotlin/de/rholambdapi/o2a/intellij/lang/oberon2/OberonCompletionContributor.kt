@@ -1,26 +1,44 @@
 package de.rholambdapi.o2a.intellij.lang.oberon2
 
 import com.intellij.codeInsight.completion.*
-import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.openapi.util.TextRange
+import com.intellij.patterns.ElementPattern
 import com.intellij.patterns.PatternCondition
-import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PlatformPatterns.*
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.*
+import com.intellij.refactoring.suggested.endOffset
+import com.intellij.refactoring.suggested.startOffset
 import com.intellij.util.ProcessingContext
+import de.rholambdapi.o2a.intellij.lang.oberon2.completion.*
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*
 
-val insideProc = psiElement().inside(OberonProcedureDecl::class.java)
-val hasTopLevelDeclParent = psiElement().withParent(OberonTopLevelDecls::class.java)
-val notInsideProc = not(insideProc)
-val insideModuleTail = psiElement().inside(OberonModuleTail::class.java)
-val topLevelPlaces = notInsideProc
+infix fun <T> ElementPattern<T>.or(other: ElementPattern<T>): ElementPattern<T> = or(this, other)
+infix fun <T> ElementPattern<T>.and(other: ElementPattern<T>): ElementPattern<T> = and(this, other)
+
+internal val INSIDE_PROC = psiElement().inside(OberonProcedureDecl::class.java)
+internal val NOT_INSIDE_PROC = not(INSIDE_PROC)
+internal val INSIDE_MODULE_TAIL = psiElement().inside(OberonModuleTail::class.java)
+
+internal val INSIDE_MODULE_INIT = psiElement().with(object : PatternCondition<PsiElement>("insideModuleInit") {
+    override fun accepts(t: PsiElement, context: ProcessingContext?): Boolean {
+        val moduleTail = t.parentsOfType<OberonModuleTail>().firstOrNull() ?: return false
+        val begin = moduleTail.moduleInit?.firstChild ?: return false
+        val end = moduleTail.lastChild.prevLeaf { it.elementType == OberonTypes.END } ?: return false
+        return TextRange(begin.endOffset, end.startOffset).contains(t.startOffset)
+    }
+})
+
+internal val IN_PROCEDURE_HEAD = psiElement().afterLeaf(psiElement().withParent(OberonProcedureDecl::class.java))
+internal val INSIDE_PROCEDURE_BODY = psiElement().inside(psiElement(OberonProcedureDeclBody::class.java)) or
+        psiElement().inside(OberonProcedureDeclBodyBlock::class.java).beforeLeaf(psiElement(OberonTypes.END))
+
+internal val TOP_LEVEL_PLACES = NOT_INSIDE_PROC
     // not inside module head, i.e. the module declaration and the import list
     .andNot(psiElement().inside(OberonModuleHead::class.java))
     // not inside module tail, i.e. the module init block
-    .andNot(insideModuleTail)
+    .andNot(INSIDE_MODULE_TAIL)
     // not after module (tail)
     .andNot(
         psiElement().afterSiblingSkipping(
@@ -31,165 +49,29 @@ val topLevelPlaces = notInsideProc
 
 class OberonCompletionContributor : CompletionContributor() {
     init {
-        val completionProvider = object : CompletionProvider<CompletionParameters>() {
-            override fun addCompletions(
-                parameters: CompletionParameters,
-                context: ProcessingContext,
-                result: CompletionResultSet
-            ) {
-                val oldTopLevelPattern = psiElement()
-                    .withLanguage(OberonLanguage.INSTANCE)
-//                    .andNot(psiElement().afterSibling(instanceOf(OberonModuleInit::class.java)))
-                    .with(object : PatternCondition<PsiElement>("custom") {
-                        override fun accepts(t: PsiElement, context: ProcessingContext?): Boolean {
-
-                            if (t.parent is PsiErrorElement) {
-
-                                return t.parent.parent is OberonModuleDef
-                            } else {
-                                return t.parent is OberonModuleDef
-                            }
-                        }
-
-                    })
-
-                println("matches top level: ${topLevelPlaces.accepts(parameters.position)}")
-                println("has top level decl parent: ${hasTopLevelDeclParent.accepts(parameters.position)}")
-                println("inside proc: ${insideProc.accepts(parameters.position)}")
-                println("inside module tail: ${insideModuleTail.accepts(parameters.position)}")
-
-                val originalPosition = parameters.originalPosition
-                val file = originalPosition?.containingFile ?: return
-
-//                println("orig pos $originalPosition, text: ${originalPosition?.text}; prev sib: ${originalPosition?.prevSibling}, text: ${originalPosition?.prevSibling?.text}")
-
-                handleModulePrefix(parameters, result)
-                addProceduresDefinedInModule(result, file)
-
-                result.addAllElements(
-
-                    listOf(
-                        LookupElementBuilder.create("orig pos: $originalPosition, prev sib text: ${originalPosition?.prevSibling?.prevSibling?.text}"),
-                        LookupElementBuilder.create("EXIT"),
-                        LookupElementBuilder.create("RETURN")
-                    )
-                )
-            }
-
-        }
-        addProviderForLocalProcedureMembers()
-        val places = PlatformPatterns.or(
-//            psiElement().withTreeParent(psiElement(OberonConstSection::class.java)),
-            psiElement().inFile(psiFile().withLanguage(OberonLanguage.INSTANCE)),
-        )
-
-        extend(CompletionType.BASIC, places, completionProvider)
-
-        extend(CompletionType.BASIC, topLevelPlaces, TopLevelKeywordCompletionProvider())
-    }
-
-    // If in procedure, add completions for constants, variables and procedures defined in the procedure
-    private fun addProviderForLocalProcedureMembers() {
+        extend(CompletionType.BASIC, INSIDE_PROCEDURE_BODY or INSIDE_MODULE_INIT, ModuleLocalTopLevelDeclarationsCompletionProvider())
         // TODO also in procedures with receiver
-        val inProcedureHead = psiElement().afterLeaf(psiElement().withParent(OberonProcedureDecl::class.java))
-        val inProcedureBody = psiElement().afterLeaf(psiElement().withParent(OberonProcedureDeclBody::class.java))
+        extend(CompletionType.BASIC, INSIDE_PROCEDURE_BODY, ProcedureLocalDeclarationsCompletionProvider())
 
-        extend(CompletionType.BASIC, inProcedureHead, object : CompletionProvider<CompletionParameters>() {
-            override fun addCompletions(
-                parameters: CompletionParameters,
-                context: ProcessingContext,
-                result: CompletionResultSet
-            ) {
-                val elements = listOf("CONST", "PROCEDURE", "TYPE", "VAR")
-                    .map { LookupElementBuilder.create(it) }
-                result.addAllElements(elements)
-            }
-        })
+        extend(CompletionType.BASIC, INSIDE_PROCEDURE_BODY or INSIDE_MODULE_INIT, ImportedDeclarationsCompletionProvider())
 
-        extend(CompletionType.BASIC, inProcedureBody, object : CompletionProvider<CompletionParameters>() {
-            override fun addCompletions(
-                parameters: CompletionParameters,
-                context: ProcessingContext,
-                result: CompletionResultSet
-            ) {
-                result.addElement(LookupElementBuilder.create("local procedure members"))
-            }
-        })
+        // inside procedure body or module init body, but not when already in qualified identifier
+        extend(CompletionType.BASIC, (INSIDE_PROCEDURE_BODY or INSIDE_MODULE_INIT)
+            .and(not(psiElement(OberonTypes.IDENT).withParent(OberonQualIdentQualified::class.java))),
+            ImportedModulesCompletionProvider())
+
+        extend(CompletionType.BASIC, TOP_LEVEL_PLACES, KeywordCompletionProvider())
     }
 
     override fun beforeCompletion(context: CompletionInitializationContext) {
-        context.dummyIdentifier = ""
-    }
-
-    private fun addProceduresDefinedInModule(result: CompletionResultSet, file: PsiFile) {
-        file.moduleDef?.let { m ->
-            m.topLevelDecls.procedureDeclList
-                .mapNotNull { d -> d.procDeclName }
-                .forEach {
-                    println("decl name: $it");
-                    result.addElement(
-                        LookupElementBuilder
-                            .createWithIcon(it)
-                            .withTailText("der tail text")
-                            .appendTailText("noch mehr tail text?", true)
-                            .withTypeIconRightAligned(true)
-                    )
-                }
-        }
-    }
-
-    val PsiFile.moduleDef
-        get() = this.descendantsOfType<OberonModuleDef>().firstOrNull()
-
-    private fun handleModulePrefix(
-        parameters: CompletionParameters,
-        result: CompletionResultSet
-    ) {
-        val leafBeforePosition = parameters.position.prevLeaf()
-        println("leafBeforePosition: $leafBeforePosition, text: ${leafBeforePosition?.text}, offs: ${leafBeforePosition?.textOffset}")
-
-        if (leafBeforePosition == null
-//            || (leafBeforePosition.elementType != OberonTypes.DOT && !leafBeforePosition.prevSibling.isIdentifier())
-        ) {
-            return
-        }
-
-        // prüfen auf . und IDENT davor
-        // falls vorhanden, liste der importierten module ermitteln
-        // prüfen, ob IDENT in der liste vorkommt
-        // falls nein, fertig; falls ja, top level member des ermittelten moduls ermitteln und lookup elements ableiten
-
-        val elements = getNamesOfImportedModules(leafBeforePosition.containingFile)
-            .flatMap { entry -> listOf(entry.key, entry.value) }
-            .filterNotNull()
-//            .map { LookupElementBuilder.create(it) }
-            .forEach { result.addElement(LookupElementBuilder.create(it)) }
-//        result.addLookupAdvertisement("ziz iz my lookup advertisement")
-//        result.addAllElements(elements)
-//        if (leafBeforePosition.prevSibling?.textMatches(
-//                "Dos"
-//            ) == true
-//        ) {
-//            result.addElement(LookupElementBuilder.create("Dos funcs (elem vor . : ${leafBeforePosition.prevSibling})"))
-//        }
+        val element = context.file.findElementAt(context.startOffset)
+        val inModuleInit = INSIDE_MODULE_INIT.accepts(element)
+//        println("element: $element, in module init: $inModuleInit")
+//        context.dummyIdentifier = ""
     }
 
     fun PsiElement?.isIdentifier() = elementType == OberonTypes.IDENT
-
-//    override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
-//        println("fillCompletionVariants")
-//        super.fillCompletionVariants(parameters, result)
-//    }
 }
 
-class TopLevelKeywordCompletionProvider : CompletionProvider<CompletionParameters>() {
-    override fun addCompletions(
-        parameters: CompletionParameters,
-        context: ProcessingContext,
-        result: CompletionResultSet
-    ) {
-        result.addElement(LookupElementBuilder.create("toplebel 1"))
-        result.addElement(LookupElementBuilder.create("toplebel 2"))
-        result.addElement(LookupElementBuilder.create("toplebel 3"))
-    }
-}
+internal val PsiFile.moduleDef
+    get() = this.descendantsOfType<OberonModuleDef>().firstOrNull()
