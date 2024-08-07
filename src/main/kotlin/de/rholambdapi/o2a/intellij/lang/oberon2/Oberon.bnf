@@ -283,14 +283,17 @@ int_const_expr ::=
     expr
 
 qual_ident ::=
-    [ qual_ident_qualifier ] qual_ident_identifier
-    { methods=[getReferences modulePart="qual_ident_module_part" memberPart="qual_ident_member_part"] }
+    qual_ident_qualified
+    | qual_ident_simple
+//    { pin=1 methods=[modulePart="IDENT"] }
+//    [ qual_ident_qualifier ] qual_ident_identifier
+    { methods=[getReferences modulePart="IDENT" /*modulePart="qual_ident_module_part" memberPart="qual_ident_member_part"*/] }
 
-qual_ident_qualifier ::=
-    IDENT '.'
-    { methods=[qualifier="IDENT"] }
+qual_ident_qualified ::=
+    IDENT '.' IDENT
+    { pin=2 methods=[getLhs getRhs] }
 
-qual_ident_identifier ::=
+qual_ident_simple ::=
     IDENT
     { methods=[identifier="IDENT"] }
 
