@@ -1,5 +1,6 @@
 package de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl
 
+import com.intellij.icons.AllIcons
 import com.intellij.navigation.ItemPresentation
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.TextRange
@@ -8,24 +9,33 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.PsiElementBase
 import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
+import com.intellij.psi.util.elementType
+import com.intellij.psi.util.nextLeaf
 import com.intellij.psi.util.parentOfType
+import de.rholambdapi.o2a.intellij.lang.oberon2.OberonElementFactory
 import de.rholambdapi.o2a.intellij.lang.oberon2.OberonIcons
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*
 import javax.swing.Icon
 
 object OberonPsiImplUtil {
-    private val LOG = Logger.getInstance(OberonPsiImplUtil::class.java)
+    private val log = Logger.getInstance(OberonPsiImplUtil::class.java)
 
     @JvmStatic
 //    fun getName(element: OberonProcedureDecl): String = "OberonPsiImplUtil.getName: ${element.node.findChildByType(OberonTypes.IDENT)?.text}"
-    fun getName(element: OberonProcedureDecl): String = "${element.node.findChildByType(
-        OberonTypes.IDENT)?.text}"
+    fun getName(element: OberonProcedureDecl): String = "${
+        element.node.findChildByType(
+            OberonTypes.IDENT
+        )?.text
+    }"
 
     @JvmStatic
-    fun getName(element: OberonModuleDef): String = element.moduleDefName.moduleName.text!!
+    fun getName(element: OberonModuleDef): String = element.moduleHead.moduleName.text ?: "??? module name"
 
     @JvmStatic
-    fun getName(element: OberonModuleDefName): String = "module def name: ${element.moduleName.text}"
+    fun getName(element: OberonModuleHead): String = element.moduleName.text ?: "??? module name"
+
+//    @JvmStatic
+//    fun getName(element: OberonModuleDefName): String = "module def name: ${element.moduleName.text}"
 
     @JvmStatic
     fun getName(element: OberonOberonAExternalProcDecl) = "ext proc: ${element.procDeclName.procedureName.text}"
@@ -244,7 +254,19 @@ object OberonPsiImplUtil {
     @JvmStatic
     fun getPresentation(element: OberonModuleDef): ItemPresentation {
         return object : ItemPresentation {
-            override fun getPresentableText(): String = element.moduleDefName.moduleName.text!!
+            //            override fun getPresentableText(): String = element.moduleDefName.moduleName.text!!
+            override fun getPresentableText(): String = "item presentation presentable text für OberonModuleDef"
+
+            override fun getLocationString(): String? = element.containingFile?.name
+
+            override fun getIcon(unused: Boolean): Icon = AllIcons.Nodes.Package
+        }
+    }
+
+    @JvmStatic
+    fun getPresentation(element: OberonModuleHead): ItemPresentation {
+        return object : ItemPresentation {
+            override fun getPresentableText(): String = "item presentation presentable text für OberonModuleHead"
 
             override fun getLocationString(): String? = element.containingFile?.name
 
@@ -254,8 +276,13 @@ object OberonPsiImplUtil {
 
     @JvmStatic
     fun getReference(referencingElement: OberonImportModuleReference): PsiReference {
-        val newReference = OberonModuleReference(referencingElement)
-//        println("getReference, referencing OberonImportModuleReference: $referencingElement")
+        val newReference = if (referencingElement.text.equals("SYSTEM")) {
+            OberonPseudoModuleReference(referencingElement)
+        } else {
+            OberonModuleReference(referencingElement)
+        }
+
+        log.debug("getReference, referencing OberonImportModuleReference: $referencingElement -> newReference: $newReference")
         return newReference
     }
 
@@ -289,8 +316,9 @@ object OberonPsiImplUtil {
         var parentReference: OberonQualIdentReference? = null
 
         while (endIdx != -1) {
-            parentReference = OberonQualIdentReference(referencingElement, TextRange(startIdx, endIdx), partIdx, parentReference)
-                .also { references.add(it) }
+            parentReference =
+                OberonQualIdentReference(referencingElement, TextRange(startIdx, endIdx), partIdx, parentReference)
+                    .also { references.add(it) }
 
             ++partIdx
             startIdx = endIdx + 1
@@ -300,14 +328,18 @@ object OberonPsiImplUtil {
         OberonQualIdentReference(referencingElement, TextRange(startIdx, elementText.length), partIdx, parentReference)
             .also { references.add(it) }
 
-        LOG.debug("OberonPsiImplUtil::getReferences(OberonQualIdent), text: ${referencingElement.text} -> references: $references")
+        log.debug("OberonPsiImplUtil::getReferences(OberonQualIdent), text: ${referencingElement.text} -> references: $references")
         return references.toTypedArray()
     }
 
     @JvmStatic
     fun getReference(referencingElement: OberonOberonASharedLibLvData): PsiReference {
 //        System.err.println("OberonPsiImplUtil::getReference(OberonOberonASharedLibLvData)")
-        return OberonSharedLibBaseVarReference(referencingElement, referencingElement.baseVarName.text, referencingElement.baseVarName.textRangeInParent)
+        return OberonSharedLibBaseVarReference(
+            referencingElement,
+            referencingElement.baseVarName.text,
+            referencingElement.baseVarName.textRangeInParent
+        )
     }
 
     @JvmStatic
@@ -334,14 +366,14 @@ object OberonPsiImplUtil {
     fun getUseScope(paramName: OberonFormalParamName): SearchScope {
         val procedureDecl = paramName.parentOfType<OberonProcedureDecl>()
         val scope = procedureDecl?.let { LocalSearchScope(it) } ?: (paramName as PsiElementBase).useScope
-        LOG.debug("OberonPsiImplUtil::getUseScope(OberonFormalParamName), paramName: $paramName, procedure: $procedureDecl -> scope $scope")
+        log.debug("OberonPsiImplUtil::getUseScope(OberonFormalParamName), paramName: $paramName, procedure: $procedureDecl -> scope $scope")
         return scope
     }
 
     @JvmStatic
     fun markedForExport(procedureDecl: OberonProcedureDecl): Boolean {
-        val readWriteExportMark = procedureDecl.procDeclName.exportMark?.readWriteExportMark
-        val readOnlyExportMark = procedureDecl.procDeclName.exportMark?.readOnlyExportMark
+        val readWriteExportMark = procedureDecl.procDeclName.readWriteExportMark
+        val readOnlyExportMark = procedureDecl.procDeclName.readOnlyExportMark
         val markedForExport = readWriteExportMark != null || readOnlyExportMark != null
 //        println("OberonPsiImplUtil::markedForExport, procedure identdef: ${procedureDecl.identDef.text} -> $markedForExport")
         return markedForExport
@@ -349,11 +381,62 @@ object OberonPsiImplUtil {
 
     @JvmStatic
     fun markedForExport(constDeclName: OberonConstDeclName): Boolean {
-        val readWriteExportMark = constDeclName.exportMark?.readWriteExportMark
-        val readOnlyExportMark = constDeclName.exportMark?.readOnlyExportMark
+        val readWriteExportMark = constDeclName.readWriteExportMark
+        val readOnlyExportMark = constDeclName.readOnlyExportMark
         val markedForExport = readWriteExportMark != null || readOnlyExportMark != null
 //        println("OberonPsiImplUtil::markedForExport, constDeclName: ${constDeclName.text}, constant name: ${constDeclName.constantName.text}, export mark: $exportMark, read only export mark: $readOnlyExportMark -> $markedForExport")
         return markedForExport
     }
 
+    @JvmStatic
+    fun getLhs(qualified: OberonQualIdentQualified): PsiElement {
+        return qualified.firstChild
+    }
+
+    @JvmStatic
+    fun getRhs(qualified: OberonQualIdentQualified): PsiElement {
+        return qualified.firstChild
+            .nextLeaf { it.elementType == OberonTypes.DOT }
+            ?.nextLeaf(skipEmptyElements = true)!!
+    }
+
+    @JvmStatic
+    fun getReadWriteExportMark(decl: OberonProcedureDecl): PsiElement? {
+        return decl.procDeclName.readWriteExportMark
+    }
+
+    @JvmStatic
+    fun getReadOnlyExportMark(decl: OberonProcedureDecl): PsiElement? {
+        return decl.procDeclName.readOnlyExportMark
+    }
+
+    @JvmStatic
+    fun hasReadWriteExportMark(decl: OberonProcedureDecl): Boolean {
+        return decl.procDeclName.readWriteExportMark != null
+    }
+
+    @JvmStatic
+    fun hasReadOnlyExportMark(decl: OberonProcedureDecl): Boolean {
+        return decl.procDeclName.readOnlyExportMark != null
+    }
+
+    @JvmStatic
+    fun getReadWriteExportMark(decl: OberonOberonALibProcDecl): PsiElement? {
+        return decl.procDeclName.readWriteExportMark
+    }
+
+    @JvmStatic
+    fun getReadOnlyExportMark(decl: OberonOberonALibProcDecl): PsiElement? {
+        return decl.procDeclName.readOnlyExportMark
+    }
+
+    @JvmStatic
+    fun hasReadWriteExportMark(decl: OberonOberonALibProcDecl): Boolean {
+        return decl.procDeclName.readWriteExportMark != null
+    }
+
+    @JvmStatic
+    fun hasReadOnlyExportMark(decl: OberonOberonALibProcDecl): Boolean {
+        return decl.procDeclName.readOnlyExportMark != null
+    }
 }
