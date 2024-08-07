@@ -371,6 +371,7 @@ proc_decl_name ::=
     IDENT
     [ export_mark ]
     {
+        pin=1
         implements="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonNamedElement"
         mixin="de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.OberonNamedElementImpl"
         methods=[procedureName="IDENT" readWriteExportMark="STAR" readOnlyExportMark="MINUS" getName setName]
@@ -424,10 +425,13 @@ private recover_decl_seq ::= !(BEGIN | CONST | TYPE | VAR | PROCEDURE)
 //private decl_error ::= recover_decl_seq { pin=1 recoverWhile=recover_decl_seq}
 
 type_section ::= 'TYPE' ( type_decl ';' )*
+    { pin=1 }
 
 var_section ::= 'VAR' ( var_decl )*
+    { pin=1 }
 
 const_section ::= 'CONST' ( const_decl  )*
+    { pin = 1 }
 
 const_decl ::=
     const_decl_name '=' const_expr ';'
@@ -486,6 +490,7 @@ stmt ::=
 
 assign_stmt ::=
     designator ':=' expr
+    { pin=2 }
 
 designator ::=
     qual_ident (
@@ -494,7 +499,7 @@ designator ::=
         | '(' qual_ident ')'    // type guard
         | '^'
     )*
-    { methods=[ getReference ]}
+    { pin=1  methods=[ getReference ]}
 
 expr_list ::=
     expr ( ',' expr )*
@@ -507,18 +512,18 @@ if_stmt ::=
     else_branch?
     'END'
     {
+        pin(".*")=1
         methods=[ conditionExpression="expr" stmt="" thenStatement="stmt[0]" elseStatement="stmt[1]"
             thenBlock="stmt_seq" ]
     }
 
 elsif_branch ::=
     'ELSIF' expr 'THEN' stmt_seq
-    { methods=[conditionExpression="expr" thenBlock="stmt_seq"] }
+    { pin=1 methods=[conditionExpression="expr" thenBlock="stmt_seq"] }
 
 else_branch ::=
     'ELSE' stmt_seq
-    {
-    methods=[elseBlock="stmt_seq"] }
+    { pin=1 methods=[elseBlock="stmt_seq"] }
 
 case_stmt ::=
     'CASE' expr 'OF'
@@ -526,6 +531,7 @@ case_stmt ::=
         ( '|' case_arm )*
         [ 'ELSE' [ stmt_seq ] ]
     'END'
+    { pin=1 }
 
 case_arm ::=
     [ case_label_list  ':' stmt_seq? ]
@@ -540,11 +546,13 @@ while_stmt ::=
     'WHILE' expr 'DO'
         [stmt_seq]
     'END'
+    { pin=1 }
 
 loop_stmt ::=
     'LOOP'
         [stmt_seq]
     'END'
+    { pin=1 }
 
 with_stmt ::=
     'WITH' guard 'DO' stmt_seq
@@ -559,6 +567,7 @@ repeat_stmt ::=
     'REPEAT'
         [ stmt_seq ]
     'UNTIL' expr
+    { pin=1 }
 
 for_stmt ::=
     'FOR' IDENT ':=' expr 'TO' expr [ 'BY' const_expr ] 'DO'
