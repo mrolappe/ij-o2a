@@ -305,6 +305,7 @@ var_decl ::=
     var_decl_name_list
     ':' type_spec ';'
 
+// TODO merge shared lib/external proc decls
 procedure_decl ::=
     'PROCEDURE'
     [ '*' /* Amiga Oberon */ ]
@@ -314,6 +315,10 @@ procedure_decl ::=
     [ formal_params ] ';'
     decl*
     procedure_decl_body_block
+
+    // Oberon-A shared library procedure
+    | oberon_a_lib_proc_decl
+
     {
         pin=7
         methods=[markedForExport getNameIdentifier setName getReadOnlyExportMark getReadWriteExportMark getIcon]
@@ -349,11 +354,16 @@ amiga_oberon_shared_lib_lv_data ::=
 amiga_oberon_external_proc_decl ::=
     'PROCEDURE' ident_def '{' STR_LIT '}' [ formal_params ] ';'
 
-oberon_a_lib_proc_decl ::=
+private oberon_a_lib_proc_decl ::=
     'PROCEDURE'
     proc_decl_name
-    [ oberon_a_shared_lib_lv_data ]
+    oberon_a_shared_lib_lv_data
     '(' [ oberon_a_formal_parameters ] ')' [ ':' formal_type ] ';'
+    {
+        pin=3
+//            implements="Oberon2ProcedureElement"
+//            methods=[getNameIdentifier setName hasReadWriteExportMark hasReadOnlyExportMark getReadWriteExportMark getReadOnlyExportMark]
+    }
 
 oberon_a_shared_lib_lv_data ::=
     '[' IDENT ',' [ '-' ] INT_LIT ']'   // shared library vector data: base variable name and offset
@@ -419,7 +429,7 @@ private decl ::= const_section
         | forward_decl ';'
         | amiga_oberon_shared_lib_proc_decl
         | amiga_oberon_external_proc_decl
-        | oberon_a_lib_proc_decl
+//        | oberon_a_lib_proc_decl
         | oberon_a_external_proc_decl
 private recover_decl_seq ::= !(BEGIN | CONST | TYPE | VAR | PROCEDURE)
 //private decl_error ::= recover_decl_seq { pin=1 recoverWhile=recover_decl_seq}
