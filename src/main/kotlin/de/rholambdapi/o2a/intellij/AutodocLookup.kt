@@ -13,10 +13,6 @@ import kotlin.io.path.isDirectory
 
 // TODO use indexing infrastructure
 
-internal fun autodocFunctionDescriptionOrNull(functionName: String, autodocFilePath: Path): String? {
-    return AutodocLookup(autodocFilePath).autodocFunctionDescriptionOrNull(functionName)
-}
-
 class AutodocLookup(private val basePath: Path) {
     private val log = thisLogger<AutodocLookup>()
     private val autodocFiles: List<VirtualFile>
@@ -38,7 +34,7 @@ class AutodocLookup(private val basePath: Path) {
         // TODO notify user if no files found
     }
 
-    internal fun autodocFunctionDescriptionOrNull(functionName: String): String? {
+    internal fun autodocFunctionDescriptionOrNull(functionName: Autodoc.ElementName): String? {
         return autodocFiles.firstNotNullOfOrNull {
             autodocFunctionDescriptionOrNull(
                 functionName,
@@ -47,19 +43,19 @@ class AutodocLookup(private val basePath: Path) {
         }
     }
 
-    internal fun autodocFunctionDescriptionOrNull(functionName: String, autodocFileInputStream: InputStream): String? {
+    internal fun autodocFunctionDescriptionOrNull(functionName: Autodoc.ElementName, autodocFileInputStream: InputStream): String? {
         val autodoc = getAutodocsByFunctionName(functionName).firstOrNull()
         return autodoc
-            ?.sectionContentFor(functionName.asElementName, FUNCTION)
+            ?.contentForSection(functionName, FUNCTION)
             ?.asString
     }
 
-    internal fun getAutodocsByFunctionName(functionName: String): Set<Autodoc> {
+    internal fun getAutodocsByFunctionName(functionName: Autodoc.ElementName): Set<Autodoc> {
         // TODO use index infrastructure
 
         return autodocFiles.map { parseAutodoc(it.inputStream) }
             .filterNotNull()
-            .filter { it.documentsFunction(Autodoc.ElementName.from(functionName)) }
+            .filter { it.documentsFunction(functionName) }
             .toSet()
     }
 
@@ -165,7 +161,7 @@ data class Autodoc(private val moduleName: ModuleName, private val entries: List
         return entryByName.containsKey(name)
     }
 
-    fun sectionContentFor(element: ElementName, section: SectionName): Entry.SectionContent? {
+    fun contentForSection(element: ElementName, section: SectionName): Entry.SectionContent? {
         return entryByName[element]?.sections?.get(section)
     }
 
