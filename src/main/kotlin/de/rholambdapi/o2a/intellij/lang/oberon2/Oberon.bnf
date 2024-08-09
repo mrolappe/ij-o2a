@@ -270,7 +270,7 @@ var_decl_name_list ::=
     var_decl_name ( ',' var_decl_name )*
 
 var_decl_name ::=
-    IDENT // <<pling_plong "var_decl_name">>
+    IDENT
     [ export_mark ]
     [ '[' ( int_const_expr /* Amiga Oberon abs var */ | STR_LIT /* Amiga Oberon ext proc ref */) ']'  ]
     {
