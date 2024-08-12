@@ -21,8 +21,6 @@ class ImportedDeclarationsCompletionProvider : CompletionProvider<CompletionPara
         val position = parameters.position
         val prefix = result.prefixMatcher.prefix
 
-        val text = "imported declarations; prefix: $prefix"
-
         // requires the parser to be robust enough to yield the node-to-be in presence of an error due to incomplete input
         if (/*prefix.isEmpty() &&*/ position.prevSibling?.parent is OberonQualIdentQualified) {
             // LHS of . -> module/alias name
@@ -32,50 +30,24 @@ class ImportedDeclarationsCompletionProvider : CompletionProvider<CompletionPara
             val modulesAndAliases = position.oberonFile?.importedModulesAndAliases
             modulesAndAliases?.entries
                 ?.filter { (modules, alias) ->
-                    val matches = modules.any { it.name == qualifier } || alias?.name == qualifier
-                    println("qual $qualifier matches: $matches")
-                    matches
+                    modules.any { it.name == qualifier } || alias?.name == qualifier
                 }
                 ?.flatMap { (modules, _) -> modules }
                 ?.flatMap { module ->
                     println("module: $module")
                     module.exportedProcedures
-                        .filter { val procDeclName = it.procDeclName
-                            val nameText = procDeclName.text
-                            val startsWith = nameText.startsWith(prefix)
-                            println("decl name: $procDeclName, nameText: $nameText, startsWith: $startsWith")
-                            startsWith
-                        }
+                        .filter { it.procDeclName.text.startsWith(prefix) }
                         .map { LookupElementBuilder.create(it) }
 
-//                    module.exportedOberonASharedLibProcedures
+                    module.exportedOberonASharedLibraryProcedures
+                        .filter { it.identDef.ident.text.startsWith(prefix) }
+                        .map { LookupElementBuilder.create(it) }
                 }
                 ?.also { elements -> result.addAllElements(elements) }
 
 //            result.addElement(LookupElementBuilder.create("import declarations aus ${position.prevLeaf { it.elementType == OberonTypes.IDENT }?.text}"))
         }
-        result.addElement(LookupElementBuilder.create(text))
-
-        if (position == null
-//            || (leafBeforePosition.elementType != OberonTypes.DOT && !leafBeforePosition.prevSibling.isIdentifier())
-        ) {
-            return
-        }
-
-        // falls vorhanden, liste der importierten module ermitteln
-        // prüfen, ob IDENT in der liste vorkommt
-        // falls nein, fertig; falls ja, top level member des ermittelten moduls ermitteln und lookup elements ableiten
-
-//        result.addLookupAdvertisement("ziz iz my lookup advertisement")
-//        result.addAllElements(elements)
-//        if (leafBeforePosition.prevSibling?.textMatches(
-//                "Dos"
-//            ) == true
-//        ) {
-//            result.addElement(LookupElementBuilder.create("Dos funcs (elem vor . : ${leafBeforePosition.prevSibling})"))
-//        }
     }
-
 }
 
 val PsiElement.oberonFile: OberonFile?
@@ -95,6 +67,7 @@ val OberonModuleDef.exportedProcedures: Set<OberonProcedureDecl>
         }
         .toSet()
 
-//val OberonModuleDef.exportedOberonASharedLibProcedures: Set<OberonOberonALibProcDecl>
-//    get() = topLevelDecls.oberonALibProcDeclList
-//        .filter { procDecl -> procDecl }
+val OberonModuleDef.exportedOberonASharedLibraryProcedures: Set<OberonOberonALibProcDecl>
+    get() = topLevelDecls.oberonALibProcDeclList
+        .filter { it.isMarkedForExport }
+        .toSet()
