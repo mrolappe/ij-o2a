@@ -53,13 +53,17 @@ class AutodocLookup(private val basePath: Path) {
     internal fun getAutodocsByFunctionName(functionName: Autodoc.ElementName): Set<Autodoc> {
         // TODO use index infrastructure
 
-        return autodocFiles.map { parseAutodoc(it.inputStream) }
+        return autodocFiles.map {
+            val autodoc = parseAutodoc(it.inputStream, it.name)
+            if (autodoc == null) log.warn("Failed to parse ${it.name} as autodoc")
+            autodoc
+        }
             .filterNotNull()
             .filter { it.documentsFunction(functionName) }
             .toSet()
     }
 
-    internal fun parseAutodoc(autodocFileInputStream: InputStream): Autodoc? {
+    internal fun parseAutodoc(autodocFileInputStream: InputStream, sourceName: String): Autodoc? {
         val buffer = ByteArrayOutputStream()
         autodocFileInputStream.copyTo(buffer)
 
@@ -71,16 +75,20 @@ class AutodocLookup(private val basePath: Path) {
         }
 
         val tocEntries = when {
-            tocLines.isEmpty() || tocLines[0] != "TABLE OF CONTENTS" || tocLines[1].isNotEmpty() -> null
+            tocLines.isEmpty() || tocLines[0] != "TABLE OF CONTENTS" || tocLines[1].isNotBlank() -> {
+                log.warn("No TOC header found in $sourceName")
+                null
+            }
 
             else -> tocLines.asSequence()
                 .drop(2)
                 .map {
-                    val result = Regex("^([\\p{Alpha}._]+)/([\\p{Alpha}_]+)\$").matchEntire(it) ?: return@map null
+                    val result = Regex("^([\\p{Alnum}._-]+)/([\\p{Alnum}._-]+)?\$").matchEntire(it) ?: return@map null
                     val moduleName = result.groupValues[1]
                     val elementName = result.groupValues[2]
                     require(moduleName.isNotBlank()) { "blank module name" }
-                    require(elementName.isNotBlank()) { "blank element name" }
+                    // Apparently, blank element is allowed, see rexxsupport.library doc TODO special handling?
+
                     TocEntry(moduleName, elementName)
                 }
                 .let { entries ->
@@ -92,9 +100,12 @@ class AutodocLookup(private val basePath: Path) {
                 }
         }
 
-        if (tocEntries.isNullOrEmpty()) return null
+        if (tocEntries.isNullOrEmpty()) {
+            log.warn("Failed to parse TOC entries of $sourceName")
+            return null
+        }
 
-        val entryHeaderRegex = Regex("^\\f(([\\p{Alpha}.]+)/([\\p{Alpha}_-]+))\\s*\\1\$")
+        val entryHeaderRegex = Regex("^\\f([\\p{Alnum}._\\-/]{1,39})\\s*\\1\$")
 
         val autodoc = ByteArrayInputStream(buffer.toByteArray())
             .reader(Charsets.ISO_8859_1)
@@ -106,26 +117,37 @@ class AutodocLookup(private val basePath: Path) {
                 // no marker found, so assume there was no TOC either -> fail
                 if (idx == 0) return null
 
+                var tocEntry = tocEntries.firstOrNull { lines[idx].startsWith(it.entryName, 1) }
+
                 // TODO handle names truncated due to overlap
-                var matchResult = entryHeaderRegex.matchEntire(lines[idx])
+                if (tocEntry == null) {
+                    log.warn("Source $sourceName; aborting, no matching TOC entry for header line: ${lines[idx]}")
+                    return@let null
+                }
 
                 val entries = mutableListOf<Autodoc.Entry>()
 
-                while (idx < lines.size && matchResult != null) {
+                while (idx < lines.size && tocEntry != null) {
                     // skip header line/FF and empty lines
                     ++idx
-                    while (idx < lines.size && lines[idx].isEmpty()) ++idx
+                    while (idx < lines.size && lines[idx].isBlank()) ++idx
 
                     val contentLinesOfEntry = buildList {
                         while (idx < lines.size && !lines[idx].startsWith(FF)) add(lines[idx++])
                     }
 
                     val entrySections = entrySectionsFromLines(contentLinesOfEntry.asSequence())
-                    val elementName = matchResult.groupValues[3]
-                    entries.add(Autodoc.Entry(Autodoc.ElementName.from(elementName), entrySections))
 
-                    matchResult = if (idx < lines.size) entryHeaderRegex.matchEntire(lines[idx]) else null
+                    entries.add(Autodoc.Entry(Autodoc.ElementName.from(tocEntry.elementName), entrySections))
 
+                    while (idx < lines.size && lines[idx].isBlank()) ++idx
+                    if (idx == lines.size) break
+
+                    tocEntry = tocEntries.firstOrNull { lines[idx].startsWith(it.entryName, 1) }
+                    if (tocEntry == null) {
+                        log.warn("Source $sourceName; aborting, no matching TOC entry for header line: ${lines[idx]}")
+                        return@let null
+                    }
                 }
 
                 Autodoc(Autodoc.ModuleName.from(tocEntries.first().moduleName), entries)
@@ -168,7 +190,7 @@ data class Autodoc(private val moduleName: ModuleName, private val entries: List
     @JvmInline
     value class ModuleName(val name: String) {
         init {
-            require(Regex("[\\p{Alpha}_.]+").matches(name)) { "Illegal module name: $name" }
+            require(Regex("[\\p{Alnum}_.-]+").matches(name)) { "Illegal module name: $name" }
         }
 
         companion object {
@@ -179,7 +201,7 @@ data class Autodoc(private val moduleName: ModuleName, private val entries: List
     @JvmInline
     value class ElementName(val name: String) {
         init {
-            require(Regex("[\\p{Alpha}_]+").matches(name)) { "Illegal element name: $name" }
+            require(Regex("([\\p{Alnum}_.-]+)?").matches(name)) { "Illegal element name: $name" }
         }
 
         companion object {
