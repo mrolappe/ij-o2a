@@ -45,8 +45,8 @@ class ImportedModulesCompletionProvider : CompletionProvider<CompletionParameter
 //                    .withTypeIconRightAligned(true)
                     } else {
                         LookupElementBuilder.createWithIcon(module)
-                            .withLookupString(module.name)
-                            .withPresentableText(module.name)
+                            .withLookupString(module.name!!)
+                            .withPresentableText(module.name!!)
                     }
                 }
             }
