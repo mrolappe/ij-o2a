@@ -4,12 +4,19 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.util.descendantsOfType
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonFile
+import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDef
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleHead
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDecl
 
 object OberonElementFactory {
     fun createFile(project: Project, text: String): OberonFile =
         PsiFileFactory.getInstance(project).createFileFromText("dummy.mod", OberonFileType.INSTANCE, text) as OberonFile
+
+    fun createEmptyModule(project: Project, moduleName: String): OberonModuleDef {
+        val file = PsiFileFactory.getInstance(project)
+            .createFileFromText("dummy.mod", OberonFileType.INSTANCE, "MODULE $moduleName; BEGIN END $moduleName.") as OberonFile
+        return file.moduleDef!!
+    }
 
     fun createModuleHead(project: Project, moduleName: String): OberonModuleHead {
         val file = PsiFileFactory.getInstance(project)
