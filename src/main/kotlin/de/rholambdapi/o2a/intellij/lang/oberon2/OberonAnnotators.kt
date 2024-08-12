@@ -1,11 +1,22 @@
 package de.rholambdapi.o2a.intellij.lang.oberon2
 
+import com.intellij.codeInspection.LocalQuickFix
+import com.intellij.codeInspection.ProblemDescriptor
+import com.intellij.codeInspection.ProblemHighlightType
+import com.intellij.codeInspection.ex.ProblemDescriptorImpl
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.diagnostic.trace
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.elementType
+import com.intellij.psi.util.parentOfType
+import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypes.IDENT
+import de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.procedureNameMatches
 
 /**
  * Semantic highlighting for constant names (for now only declaration site)
@@ -85,5 +96,109 @@ class PredeclaredIdentifierAnnotator : Annotator {
                 .textAttributes(OberonSyntaxHighlighterColors.PREDEFINED_SYMBOL)
                 .create()
         }
+    }
+}
+
+
+class EndIdentifierMismatchAnnotator : Annotator {
+    private val log = thisLogger()
+
+    override fun annotate(element: PsiElement, holder: AnnotationHolder) {
+        log.trace { "EndIdentifierMismatchAnnotator::annotate, element: $element" }
+
+        when (element) {
+            is OberonProcedureDecl -> {
+                val endIdentifier = element.endIdentifier ?: return
+                val endIdentifierName = endIdentifier.text
+
+                if (!element.procedureNameMatches(endIdentifierName)) {
+                    val procedureName = element.procDeclName.procedureName.text
+                    holder.newAnnotation(
+                        HighlightSeverity.ERROR,
+                        "End identifier does not match procedure name '$procedureName'",
+                    )
+                        .range(endIdentifier)
+                        .newLocalQuickFix(
+                            RenameEndIdentifierFix(procedureName),
+                            ProblemDescriptorImpl(
+                                endIdentifier,
+                                endIdentifier,
+                                "TODO EndIdentifierMismatchAnnotator problem description template",
+                                emptyArray(),
+                                ProblemHighlightType.ERROR,
+                                true,
+                                null,
+                                true
+                            )
+                        ).registerFix()
+                        .create()
+                }
+            }
+
+            is OberonModuleTail -> {
+                val endIdentifier = element.endIdentifier
+                val endIdentifierName = endIdentifier?.text
+                val moduleHead = element.parentOfType<OberonModuleDef>()?.moduleHead!!
+
+                if (endIdentifier != null && moduleHead.nameIdentifier.text != endIdentifierName) {
+                    val moduleName = moduleHead.nameIdentifier.text
+                    holder.newAnnotation(
+                        HighlightSeverity.ERROR,
+                        "End identifier '$endIdentifierName' does not match name '$moduleName' in module declaration"
+                    )
+                        .range(endIdentifier)
+                        .newLocalQuickFix(
+                            RenameEndIdentifierFix(moduleName), ProblemDescriptorImpl(
+                                endIdentifier,
+                                endIdentifier,
+                                "TODO EndIdentifierMismatchAnnotator problem description template",
+                                emptyArray(),
+                                ProblemHighlightType.ERROR,
+                                true,
+                                null,
+                                true
+                            )
+                        ).registerFix()
+                        .create()
+                }
+            }
+        }
+    }
+}
+
+val OberonProcedureDecl.endIdentifier: PsiElement?
+    get() = procedureDeclBodyBlock?.procedureDeclTail?.endIdentifier
+
+class RenameEndIdentifierFix(private val targetName: @NlsSafe String) : LocalQuickFix {
+    private val log = thisLogger()
+
+    override fun getFamilyName() = "Change end identifier"
+
+    override fun getName() = "Change end identifier to '$targetName'"
+
+    override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
+        val element = descriptor.psiElement
+        val parent = element?.parent
+        log.debug("RenameEndIdentifierFix::applyFix, project: $project, descriptor: $descriptor, element: $element, element parent: $parent")
+
+        when (parent) {
+            is OberonProcedureDeclTail -> {
+                OberonElementFactory.createEmptyNoArgProcedure(
+                    element.project,
+                    targetName
+                ).procedureDeclBodyBlock?.procedureDeclTail?.endIdentifier?.let {
+                    parent.endIdentifier.replace(it)
+                }
+            }
+
+            is OberonModuleTail -> {
+                OberonElementFactory.createEmptyModule(project, targetName).moduleTail.endIdentifier?.let {
+                    parent.endIdentifier?.replace(it)
+                }
+            }
+
+            else -> log.warn("Unexpected type of parent: $parent")
+        }
+
     }
 }

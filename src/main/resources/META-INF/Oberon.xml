@@ -41,7 +41,11 @@
 
         <annotator language="Oberon" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.ConstAnnotator"/>
 
-        <annotator language="Oberon" implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.PredeclaredIdentifierAnnotator" />
+        <annotator language="Oberon"
+                   implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.PredeclaredIdentifierAnnotator"/>
+
+        <annotator language="Oberon"
+                   implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.EndIdentifierMismatchAnnotator" />
 
         <lang.documentationProvider language="Oberon"
                                     implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonDocumentationProvider"/>
