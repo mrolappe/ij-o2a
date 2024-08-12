@@ -12,6 +12,8 @@ import com.intellij.openapi.diagnostic.trace
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiErrorElement
+import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.elementType
 import com.intellij.psi.util.parentOfType
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*
@@ -22,17 +24,67 @@ import de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.procedureNameMatches
  * Semantic highlighting for constant names (for now only declaration site)
  */
 class ConstAnnotator : Annotator {
-    override fun annotate(element: PsiElement, holder: AnnotationHolder) {
-//        println("ConstAnnotator::annotate, element: $element")
+    val log = thisLogger()
 
-        if (element.elementType == IDENT && element.parent is de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonConstDeclName) {
+    override fun annotate(element: PsiElement, holder: AnnotationHolder) {
+        if (element.elementType == IDENT && element.parent is OberonConstDeclName) {
             holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
                 .range(element)
                 .textAttributes(OberonSyntaxHighlighterColors.CONSTANT)
                 .create()
         }
+
+        val markAndTextAttributes = when {
+            hasReadWriteExportMark(element) -> readWriteExportMark(element)!! to OberonSyntaxHighlighterColors.READ_WRITE_EXPORT_MARK
+            hasReadOnlyExportMark(element) -> readOnlyExportMark(element)!! to OberonSyntaxHighlighterColors.READ_ONLY_EXPORT_MARK
+            else -> null
+        }
+
+        log.debug(
+            "element: $element, has export mark R/W: ${hasReadWriteExportMark(element)}, R/O: ${
+                hasReadOnlyExportMark(
+                    element
+                )
+            }"
+        )
+
+        markAndTextAttributes?.let { (markElement, textAttributes) ->
+            holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
+                .range(markElement)
+                .textAttributes(textAttributes)
+                .create()
+        }
+    }
+
+}
+
+fun hasReadOnlyExportMark(element: PsiElement): Boolean {
+    return readOnlyExportMark(element) != null
+}
+
+fun readOnlyExportMark(element: PsiElement): PsiElement? {
+    return when (element) {
+        is Oberon2ExportableDeclarationElement -> element.readOnlyExportMark
+        else -> null
     }
 }
+
+fun hasReadWriteExportMark(element: PsiElement): Boolean {
+    return readWriteExportMark(element) != null
+}
+
+fun readWriteExportMark(element: PsiElement): PsiElement? {
+    return when (element) {
+        is Oberon2ExportableDeclarationElement -> element.readWriteExportMark
+        is PsiWhiteSpace, is PsiErrorElement -> null
+        else -> {
+            null
+        }
+    }
+}
+
+private val OberonModuleDef.endIdentifier: PsiElement
+    get() = this.moduleTail.endIdentifier!!
 
 val PREDEFINED_TYPE_IDENTIFIERS = setOf(
 //            BYTE,
@@ -83,13 +135,16 @@ val PREDEFINED_CONSTANT_IDENTIFIERS = setOf(
     "TRUE",
 )
 
-val PREDEFINED_IDENTIFIERS = PREDEFINED_TYPE_IDENTIFIERS union PREDEFINED_PROCEDURE_IDENTIFIERS union PREDEFINED_FUNCTION_IDENTIFIERS union
-        PREDEFINED_CONSTANT_IDENTIFIERS union ADDITIONAL_AMIGA_OBERON_TYPE_IDENTIFIERS
+val PREDEFINED_IDENTIFIERS =
+    PREDEFINED_TYPE_IDENTIFIERS union PREDEFINED_PROCEDURE_IDENTIFIERS union PREDEFINED_FUNCTION_IDENTIFIERS union
+            PREDEFINED_CONSTANT_IDENTIFIERS union ADDITIONAL_AMIGA_OBERON_TYPE_IDENTIFIERS
 
 class PredeclaredIdentifierAnnotator : Annotator {
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
         if (element.elementType == IDENT && (PREDEFINED_IDENTIFIERS.contains(element.text)
-                    || PREDEFINED_TYPE_IDENTIFIERS.contains(element.text) || ADDITIONAL_AMIGA_OBERON_TYPE_IDENTIFIERS.contains(element.text))
+                    || PREDEFINED_TYPE_IDENTIFIERS.contains(element.text) || ADDITIONAL_AMIGA_OBERON_TYPE_IDENTIFIERS.contains(
+                element.text
+            ))
         ) {
             holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
                 .range(element)

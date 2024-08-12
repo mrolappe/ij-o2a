@@ -27,4 +27,6 @@ object OberonSyntaxHighlighterColors {
     val PARAMETER = createTextAttributesKey("OBERON_PARAMETER", DefaultLanguageHighlighterColors.PARAMETER)
     val PREDEFINED_SYMBOL = createTextAttributesKey("OBERON_PREDEFINED_SYMBOL", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL)
     val PSEUDO_COMMENT = createTextAttributesKey("OBERON_PSEUDO_COMMENT", HighlighterColors.BAD_CHARACTER)
+    val READ_WRITE_EXPORT_MARK = createTextAttributesKey("OBERON_READ_WRITE_EXPORT_MARK", HighlighterColors.BAD_CHARACTER)
+    val READ_ONLY_EXPORT_MARK = createTextAttributesKey("OBERON_READ_ONLY_EXPORT_MARK", HighlighterColors.BAD_CHARACTER)
 }
