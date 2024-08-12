@@ -1,4 +1,5 @@
 // TODOs
+// - baumstruktur optimieren/minimieren
 // - AmigaOberon PROCEDURE*
 // - kollision real lit mit .. range op
 // - AmigaOberon: es scheint noch eine weitere verwendung von .. bei parametern zu geben, beispiel: tag1{8}..   : e.APTR
@@ -164,12 +165,16 @@ module_tail ::=
     [ 'CLOSE'           // AmigaOberon
         stmt_seq ]
     'END' IDENT '.'
-    { pin=1 methods=[endIdentifier="IDENT" getReference]}
+    { pin=1 methods=[endKeyword="END" endIdentifier="IDENT"]}
 
 module_init ::=
     'BEGIN'
     [ stmt_seq ]
-    { name="module initializer" pin=1}
+    {
+        pin=1 name="module initializer"
+        methods=[beginKeyword="BEGIN"]
+        implements="com.intellij.psi.NavigatablePsiElement"
+    }
 
 //private module_def_name ::= IDENT
 //    {
@@ -263,7 +268,7 @@ ident_def ::=
     {
         implements="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonNamedElement"
         mixin="de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.OberonNamedElementImpl"
-        methods=[getName setName getNameIdentifier]
+        methods=[getName setName getNameIdentifier readWriteExportMark="STAR" readOnlyExportMark="MINUS"]
     }
 
 var_decl_name_list ::=
@@ -318,13 +323,9 @@ procedure_decl ::=
     [ formal_params ] ';'
     decl*
     procedure_decl_body_block
-
-    // Oberon-A shared library procedure
-    | oberon_a_lib_proc_decl
-
     {
-        pin=7
-        methods=[markedForExport getNameIdentifier setName getReadOnlyExportMark getReadWriteExportMark getIcon]
+        pin=5
+        methods=[getTextOffset markedForExport getNameIdentifier setName getReadOnlyExportMark getReadWriteExportMark getIcon]
         implements="Oberon2ProcedureElement"
         mixin="Oberon2ElementMixin"
     }
@@ -336,7 +337,7 @@ procedure_decl_body_block ::=
 
 procedure_decl_tail ::= 'END' IDENT ';'
     {
-        methods=[endIdentifier="IDENT" getReference]
+        methods=[endIdentifier="IDENT"]
     }
 
 procedure_decl_body ::= 'BEGIN'
@@ -344,7 +345,7 @@ procedure_decl_body ::= 'BEGIN'
         { pin=1 }
 
 // Amiga Oberon
-amiga_oberon_shared_lib_proc_decl ::=
+ amiga_oberon_shared_lib_proc_decl ::=
     'PROCEDURE' ident_def
     amiga_oberon_shared_lib_lv_data
     [ formal_params ] ';'
@@ -357,15 +358,18 @@ amiga_oberon_shared_lib_lv_data ::=
 amiga_oberon_external_proc_decl ::=
     'PROCEDURE' ident_def '{' STR_LIT '}' [ formal_params ] ';'
 
-private oberon_a_lib_proc_decl ::=
+oberon_a_lib_proc_decl ::=
     'PROCEDURE'
-    proc_decl_name
+    ident_def
     oberon_a_shared_lib_lv_data
-    '(' [ oberon_a_formal_parameters ] ')' [ ':' formal_type ] ';'
+    [ oberon_a_formal_parameters ]
+    [ ':' formal_type ] ';'
     {
-        pin=3
-//            implements="Oberon2ProcedureElement"
-//            methods=[getNameIdentifier setName hasReadWriteExportMark hasReadOnlyExportMark getReadWriteExportMark getReadOnlyExportMark]
+        pin="oberon_a_shared_lib_lv_data"
+        implements="Oberon2ExportableDeclarationElement"
+        methods=[getTextOffset getNameIdentifier setName isMarkedForExport getReadWriteExportMark getReadOnlyExportMark]
+        mixin="Oberon2ElementMixin"
+//            methods=[ setName hasReadWriteExportMark hasReadOnlyExportMark ]
     }
 
 oberon_a_shared_lib_lv_data ::=
@@ -377,7 +381,7 @@ oberon_a_external_proc_decl ::=
         ['*']                   // mark as assignable procedure
         [ '[' INT_LIT ']' ]     // system flag
         proc_decl_name
-        [ '[' STR_LIT ']']      // (linker) name of external procedure
+        '[' STR_LIT ']'      // (linker) name of external procedure
         '(' [ oberon_a_formal_parameters ] ')' [ ':' formal_type ] ';'
 
 proc_decl_name ::=
@@ -390,12 +394,21 @@ proc_decl_name ::=
         methods=[procedureName="IDENT" readWriteExportMark="STAR" readOnlyExportMark="MINUS" getName setName]
     }
 
+proc_decl_name_no_exp_mark ::=
+    IDENT
+    {
+        extends=proc_decl_name
+//        implements="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonNamedElement"
+//        mixin="de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.OberonNamedElementImpl"
+        methods=[procedureName="IDENT" getName setName]
+    }
+
 private export_mark ::=
     '*' | '-'
     { methods=[readWriteExportMark="STAR" readOnlyExportMark="MINUS"] }
 
 oberon_a_formal_parameters ::=
-    oberon_a_formal_parameter ( ';' oberon_a_formal_parameter )*
+    '(' [ oberon_a_formal_parameter ( ';' oberon_a_formal_parameter )* ] ')'
 
 oberon_a_formal_parameter ::=
     [ 'VAR' ] IDENT oberon_a_reg_spec ( ',' IDENT oberon_a_reg_spec )* ':' formal_type
@@ -423,17 +436,20 @@ receiver_type ::=
 
 forward_decl ::=
     'PROCEDURE' '^' [ receiver ] ident_def [ formal_params ]
+    { pin=2 }
 
 
 private decl ::= const_section
         | type_section
         | var_section
-        | procedure_decl
         | forward_decl ';'
+        // Oberon-A shared library procedure
+        | oberon_a_lib_proc_decl
+        // Oberon-A external procedure
+        | oberon_a_external_proc_decl
         | amiga_oberon_shared_lib_proc_decl
         | amiga_oberon_external_proc_decl
-//        | oberon_a_lib_proc_decl
-        | oberon_a_external_proc_decl
+        | procedure_decl
 private recover_decl_seq ::= !(BEGIN | CONST | TYPE | VAR | PROCEDURE)
 //private decl_error ::= recover_decl_seq { pin=1 recoverWhile=recover_decl_seq}
 
@@ -448,14 +464,19 @@ const_section ::= 'CONST' ( const_decl  )*
 
 const_decl ::=
     const_decl_name '=' const_expr ';'
+    {
+        implements="Oberon2ExportableDeclarationElement"
+        methods=[getName setName getNameIdentifier getReadWriteExportMark getReadOnlyExportMark]
+    }
 
 const_decl_name ::=
     IDENT
     [ export_mark ]   // export marker
     {
+        pin=1 name="constant declaration"
         implements="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonNamedElement"
         mixin="de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.OberonNamedElementImpl"
-        methods=[constantName="IDENT" readWriteExportMark="STAR" readOnlyExportMark="MINUS" getName setName getNameIdentifier markedForExport]
+        methods=[constantName="IDENT" readWriteExportMark="STAR" readOnlyExportMark="MINUS" getName setName markedForExport]
     }
 
 formal_params ::=
@@ -518,14 +539,15 @@ expr_list ::=
     expr ( ',' expr )*
 
 if_stmt ::=
-    'IF' expr 'THEN' [ stmt [ 'ELSE' stmt ] ] 'END'
-    | 'IF' expr 'THEN'
+//    'IF' expr 'THEN' [ stmt [ 'ELSE' stmt ] ] 'END'
+//    |
+    'IF' expr 'THEN'
         stmt_seq?
     elsif_branch*
     else_branch?
     'END'
     {
-        pin(".*")=1
+//        pin(".*")=1
         methods=[ conditionExpression="expr" stmt="" thenStatement="stmt[0]" elseStatement="stmt[1]"
             thenBlock="stmt_seq" ]
     }

@@ -38,10 +38,19 @@ object OberonPsiImplUtil {
 //    fun getName(element: OberonModuleDefName): String = "module def name: ${element.moduleName.text}"
 
     @JvmStatic
+    fun getName(element: OberonIdentDef): String {
+        println("OberonPsiImplUtil::getName(OberonIdentDef), element: $element")
+        return element.ident.text
+    }
+
+    @JvmStatic
     fun getName(element: OberonOberonAExternalProcDecl) = "ext proc: ${element.procDeclName.procedureName.text}"
 
     @JvmStatic
-    fun getName(element: OberonOberonALibProcDecl): String = element.procDeclName.procedureName.text
+    fun getName(element: OberonOberonALibProcDecl): String = element.identDef.ident.text
+
+    @JvmStatic
+    fun getName(element: OberonConstDecl): String = getName(element.constDeclName)
 
     @JvmStatic
     fun getName(element: OberonConstDeclName): String = element.constantName.text
@@ -87,6 +96,16 @@ object OberonPsiImplUtil {
     @JvmStatic
     fun setName(element: OberonOberonAExternalProcDecl, newName: String): PsiElement {
         println("TODO OberonPsiImplUtil::setName, OberonOberonAExternalProcDecl element: $element, newName: $newName")
+        element.node.findChildByType(OberonTypes.IDENT)?.also {
+            // TODO
+        }
+
+        return element
+    }
+
+    @JvmStatic
+    fun setName(element: OberonConstDecl, newName: String): PsiElement {
+        println("TODO OberonPsiImplUtil::setName, OberonConstDecl element: $element, newName: $newName")
         element.node.findChildByType(OberonTypes.IDENT)?.also {
             // TODO
         }
@@ -156,9 +175,25 @@ object OberonPsiImplUtil {
     fun setName(element: OberonProcDeclName, newName: String): PsiElement {
         log.debug("setName, proc decl name: $element, newName: $newName")
 
-        return OberonElementFactory.createEmptyNoArgProcedure(element.project, newName).nameIdentifier?.let {
-            element.replace(it)
-        } ?: element
+        val decl = OberonElementFactory.createEmptyNoArgProcedure(element.project, newName)
+        element.procedureName.replace(decl.procDeclName.procedureName)
+        val procedureDecl = element.parentOfType<OberonProcedureDecl>()
+
+        if (procedureDecl == null) {
+            log.error("Containing procedure of $element not found (while setName; newName: $newName)")
+            return element
+        }
+
+        val newEndIdentifier = decl.procedureDeclBodyBlock?.procedureDeclTail?.endIdentifier
+
+        if (newEndIdentifier == null) {
+            log.error("New end identifier was null")
+            return element
+        }
+
+        procedureDecl.procedureDeclBodyBlock?.procedureDeclTail?.endIdentifier
+            ?.replace(newEndIdentifier)
+        return element
     }
 
 //    @JvmStatic
@@ -219,10 +254,10 @@ object OberonPsiImplUtil {
     fun getNameIdentifier(element: OberonOberonAExternalProcDecl): PsiElement = element.procDeclName.procedureName
 
     @JvmStatic
-    fun getNameIdentifier(element: OberonOberonALibProcDecl): PsiElement = element.procDeclName.procedureName
+    fun getNameIdentifier(element: OberonOberonALibProcDecl): PsiElement = element.identDef.ident
 
     @JvmStatic
-    fun getNameIdentifier(element: OberonConstDeclName): PsiElement = element.constantName
+    fun getNameIdentifier(element: OberonConstDecl): PsiElement = element.constDeclName.constantName
 
     @JvmStatic
     fun getNameIdentifier(element: OberonImportAlias): PsiElement = element.aliasName
@@ -353,16 +388,6 @@ object OberonPsiImplUtil {
     }
 
     @JvmStatic
-    fun getReference(referencingElement: OberonProcedureDeclTail): PsiReference {
-        return EndIdentifierReference(referencingElement)
-    }
-
-    @JvmStatic
-    fun getReference(referencingElement: OberonModuleTail): PsiReference {
-        return EndIdentifierReference(referencingElement)
-    }
-
-    @JvmStatic
     fun getUseScope(paramName: OberonFormalParamName): SearchScope {
         val procedureDecl = paramName.parentOfType<OberonProcedureDecl>()
         val scope = procedureDecl?.let { LocalSearchScope(it) } ?: (paramName as PsiElementBase).useScope
@@ -372,10 +397,18 @@ object OberonPsiImplUtil {
 
     @JvmStatic
     fun markedForExport(procedureDecl: OberonProcedureDecl): Boolean {
-        val readWriteExportMark = procedureDecl.procDeclName.readWriteExportMark
-        val readOnlyExportMark = procedureDecl.procDeclName.readOnlyExportMark
+        val readWriteExportMark = procedureDecl.procDeclName?.readWriteExportMark
+        val readOnlyExportMark = procedureDecl.procDeclName?.readOnlyExportMark
         val markedForExport = readWriteExportMark != null || readOnlyExportMark != null
 //        println("OberonPsiImplUtil::markedForExport, procedure identdef: ${procedureDecl.identDef.text} -> $markedForExport")
+        return markedForExport
+    }
+
+    @JvmStatic
+    fun isMarkedForExport(decl: OberonOberonALibProcDecl): Boolean {
+        val readWriteExportMark = decl.identDef.readWriteExportMark
+        val readOnlyExportMark = decl.identDef.readOnlyExportMark
+        val markedForExport = readWriteExportMark != null || readOnlyExportMark != null
         return markedForExport
     }
 
@@ -402,12 +435,12 @@ object OberonPsiImplUtil {
 
     @JvmStatic
     fun getReadWriteExportMark(decl: OberonProcedureDecl): PsiElement? {
-        return decl.procDeclName.readWriteExportMark
+        return decl.procDeclName?.readWriteExportMark
     }
 
     @JvmStatic
     fun getReadOnlyExportMark(decl: OberonProcedureDecl): PsiElement? {
-        return decl.procDeclName.readOnlyExportMark
+        return decl.procDeclName?.readOnlyExportMark
     }
 
     @JvmStatic
@@ -421,22 +454,38 @@ object OberonPsiImplUtil {
     }
 
     @JvmStatic
+    fun getReadWriteExportMark(decl: OberonConstDecl): PsiElement? {
+        return decl.constDeclName.readWriteExportMark
+    }
+
+    @JvmStatic
+    fun getReadOnlyExportMark(decl: OberonConstDecl): PsiElement? {
+        return decl.constDeclName.readOnlyExportMark
+    }
+
+    @JvmStatic
     fun getReadWriteExportMark(decl: OberonOberonALibProcDecl): PsiElement? {
-        return decl.procDeclName.readWriteExportMark
+        return decl.identDef.readWriteExportMark
     }
 
     @JvmStatic
     fun getReadOnlyExportMark(decl: OberonOberonALibProcDecl): PsiElement? {
-        return decl.procDeclName.readOnlyExportMark
+        return decl.identDef.readOnlyExportMark
     }
 
     @JvmStatic
     fun hasReadWriteExportMark(decl: OberonOberonALibProcDecl): Boolean {
-        return decl.procDeclName.readWriteExportMark != null
+        return decl.identDef.readWriteExportMark != null
     }
 
     @JvmStatic
     fun hasReadOnlyExportMark(decl: OberonOberonALibProcDecl): Boolean {
-        return decl.procDeclName.readOnlyExportMark != null
+        return decl.identDef.readOnlyExportMark != null
     }
+
+    @JvmStatic
+    fun getTextOffset(decl: OberonProcedureDecl): Int = getNameIdentifier(decl)?.textOffset ?: -1
+
+    @JvmStatic
+    fun getTextOffset(decl: OberonOberonALibProcDecl): Int = getNameIdentifier(decl).textOffset
 }
