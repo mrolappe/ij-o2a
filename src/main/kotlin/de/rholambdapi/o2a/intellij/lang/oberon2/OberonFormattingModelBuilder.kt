@@ -2,6 +2,7 @@ package de.rholambdapi.o2a.intellij.lang.oberon2
 
 import com.intellij.formatting.*
 import com.intellij.psi.codeStyle.CodeStyleSettings
+import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypes
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypes.*
 
 class OberonFormattingModelBuilder : FormattingModelBuilder {
@@ -25,9 +26,9 @@ class OberonFormattingModelBuilder : FormattingModelBuilder {
             .spaceIf(settings.getCommonSettings(OberonLanguage.INSTANCE).SPACE_AROUND_ASSIGNMENT_OPERATORS)
             .around(LPAREN).none()
             .around(RPAREN).none()
+            .between(OberonTypes.DESIGNATOR, OberonTypes.ACTUAL_PARAMS).none()
 
-            .before(PROCEDURE)
-            .none()
+            .before(PROCEDURE) .none()
 
 //            .after(OberonTypes.PROCEDURE).spaces(7)
 //            .after(OberonTypes.IMPORT).spaces(13)
