@@ -5,7 +5,7 @@ exampleLibrary = "24.1.0"
 # plugins
 kotlin = "2.2.21"
 changelog = "2.4.0"
-gradleIntelliJPlugin = "1.17.4"
+intellijPlatform = "2.10.3"
 qodana = "2025.2.2"
 kover = "0.9.3"
 junit5 = "5.9.0"
@@ -17,7 +17,7 @@ kotestAssertionsCore = { group = "io.kotest", name = "kotest-assertions-core", v
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
-gradleIntelliJPlugin = { id = "org.jetbrains.intellij", version.ref = "gradleIntelliJPlugin" }
+intellijPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intellijPlatform" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
