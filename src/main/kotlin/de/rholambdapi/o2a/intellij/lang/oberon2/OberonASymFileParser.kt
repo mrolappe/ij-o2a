@@ -129,7 +129,10 @@ fun parseSymFile(input: InputStream): Result<OberonASymFile, ParseSymFileError> 
     val dataInput: DataInput = DataInputStream(pushback)
 
     val matchTagResult = matchSymFileTagV8(dataInput)
-    if (matchTagResult.isErr) return Err(ParseSymFileError.IoError(matchTagResult.error))
+
+    if (matchTagResult.isErr) {
+        return Err(ParseSymFileError.IoError(matchTagResult.getError()!!))
+    }
 
     var done = false
 
@@ -205,7 +208,7 @@ fun parseSymFile(input: InputStream): Result<OberonASymFile, ParseSymFileError> 
             }
 
         if (result.isErr) {
-            return Err(ParseSymFileError.FailedToParseElement(result.error))
+            return Err(ParseSymFileError.FailedToParseElement(result.getError()!!))
         }
 
         done = pushback.read().also { pushback.unread(it) }.let { nextByte ->
@@ -230,7 +233,7 @@ fun DataInput.parseElement(): Result<Element, ParseElementError> {
     val readElementClassResult = readElementClass()
 
     if (readElementClassResult.isErr) {
-        return Err(ParseElementError.FailedToReadElementClass(readElementClassResult.error))
+        return Err(ParseElementError.FailedToReadElementClass(readElementClassResult.getError()!!))
     }
 
     println("readElementClassResult: $readElementClassResult")
