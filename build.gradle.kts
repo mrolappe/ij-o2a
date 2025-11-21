@@ -29,7 +29,7 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
-    implementation("com.michael-bull.kotlin-result:kotlin-result:2.0.0")
+    implementation("com.michael-bull.kotlin-result:kotlin-result:2.1.0")
 
     intellijPlatform {
         val type = properties("platformType")
