@@ -1,0 +1,68 @@
+// This is a generated file. Not intended for manual editing.
+package de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl;
+
+import java.util.List;
+import org.jetbrains.annotations.*;
+import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.util.PsiTreeUtil;
+import static de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonTypes.*;
+import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*;
+import com.intellij.navigation.ItemPresentation;
+
+public class OberonModuleHeadImpl extends OberonNamedElementImpl implements OberonModuleHead {
+
+  public OberonModuleHeadImpl(@NotNull ASTNode node) {
+    super(node);
+  }
+
+  public void accept(@NotNull OberonVisitor visitor) {
+    visitor.visitModuleHead(this);
+  }
+
+  @Override
+  public void accept(@NotNull PsiElementVisitor visitor) {
+    if (visitor instanceof OberonVisitor) accept((OberonVisitor)visitor);
+    else super.accept(visitor);
+  }
+
+  @Override
+  @Nullable
+  public OberonImportList getImportList() {
+    return findChildByClass(OberonImportList.class);
+  }
+
+  @Override
+  @Nullable
+  public PsiElement getIntLit() {
+    return findChildByType(INT_LIT);
+  }
+
+  @Override
+  @NotNull
+  public PsiElement getModuleName() {
+    return findNotNullChildByType(IDENT);
+  }
+
+  @Override
+  public @NotNull String getName() {
+    return OberonPsiImplUtil.getName(this);
+  }
+
+  @Override
+  public @NotNull PsiElement setName(@NotNull String newName) {
+    return OberonPsiImplUtil.setName(this, newName);
+  }
+
+  @Override
+  public @NotNull PsiElement getNameIdentifier() {
+    return OberonPsiImplUtil.getNameIdentifier(this);
+  }
+
+  @Override
+  public @NotNull ItemPresentation getPresentation() {
+    return OberonPsiImplUtil.getPresentation(this);
+  }
+
+}
