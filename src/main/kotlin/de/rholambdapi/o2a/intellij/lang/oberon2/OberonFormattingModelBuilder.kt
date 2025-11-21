@@ -22,8 +22,8 @@ class OberonFormattingModelBuilder : FormattingModelBuilder {
 
     private fun createSpacingBuilder(settings: CodeStyleSettings) =
         SpacingBuilder(settings, OberonLanguage.INSTANCE)
-            .around(COLON_EQUALS)
-            .spaceIf(settings.getCommonSettings(OberonLanguage.INSTANCE).SPACE_AROUND_ASSIGNMENT_OPERATORS)
+//            .around(COLON_EQUALS)
+//            .spaceIf(settings.getCommonSettings(OberonLanguage.INSTANCE).SPACE_AROUND_ASSIGNMENT_OPERATORS)
             .around(LPAREN).none()
             .around(RPAREN).none()
             .between(OberonTypes.DESIGNATOR, OberonTypes.ACTUAL_PARAMS).none()

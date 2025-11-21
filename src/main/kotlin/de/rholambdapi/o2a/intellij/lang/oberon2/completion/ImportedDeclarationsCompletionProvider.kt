@@ -41,7 +41,7 @@ class ImportedDeclarationsCompletionProvider : CompletionProvider<CompletionPara
 
                     module.exportedOberonASharedLibraryProcedures
                         .filter { it.identDef.ident.text.startsWith(prefix) }
-                        .map { LookupElementBuilder.create(it) }
+                        .map { LookupElementBuilder.create(it).withCaseSensitivity(false) }
                 }
                 ?.also { elements -> result.addAllElements(elements) }
 

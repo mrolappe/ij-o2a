@@ -197,10 +197,10 @@ val OberonTypeDeclName.isExported
     get() = readWriteExportMark != null || readOnlyExportMark != null
 
 fun OberonOberonALibProcDecl.procedureNameMatches(matchName: String) =
-    this.procDeclName.procedureName.textMatches(matchName)
+    this.identDef.ident.textMatches(matchName)
 
 val OberonOberonALibProcDecl.isExported
-    get() = procDeclName.readWriteExportMark != null || procDeclName.readOnlyExportMark != null
+    get() = identDef.readWriteExportMark != null || identDef.readOnlyExportMark != null
 
 val OberonFile.moduleHead
     get() = descendantsOfType<OberonModuleHead>(childrenFirst = true).firstOrNull()

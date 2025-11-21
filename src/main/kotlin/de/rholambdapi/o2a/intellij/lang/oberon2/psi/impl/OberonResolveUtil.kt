@@ -1,6 +1,7 @@
 package de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl
 
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.parentOfType
 import de.rholambdapi.o2a.intellij.lang.oberon2.*
@@ -24,7 +25,7 @@ internal fun procedureDeclContaining(element: PsiElement): OberonProcedureDecl? 
 }
 
 internal fun topLevelProcedureDeclNames(module: OberonModuleDef): List<OberonProcedureDecl> {
-    return PsiTreeUtil.getChildrenOfTypeAsList(module, OberonProcedureDecl::class.java)
+    return module.topLevelDecls.procedureDeclList
 }
 
 internal fun topLevelConstantNames(module: OberonModuleDef): List<OberonConstDeclName> =
@@ -41,8 +42,8 @@ internal fun topLevelVarDeclNames(module: OberonModuleDef): List<OberonVarDeclNa
 internal fun topLevelVarSections(module: OberonModuleDef): List<OberonVarSection> =
     PsiTreeUtil.getChildrenOfTypeAsList(module, OberonVarSection::class.java)
 
-internal fun resolveByModuleNameAndMemberName(referencingElement: PsiElement, moduleName: String, memberName: String): List<OberonNamedElement> {
-    val resolveResults = mutableListOf<OberonNamedElement>()
+internal fun resolveByModuleNameAndMemberName(referencingElement: PsiElement, moduleName: String, memberName: String): List<PsiNamedElement> {
+    val resolveResults = mutableListOf<PsiNamedElement>()
 
     OberonUtil.findModulesByName(referencingElement.project, moduleName)
         .forEach { module ->
@@ -53,7 +54,7 @@ internal fun resolveByModuleNameAndMemberName(referencingElement: PsiElement, mo
                 ?.let { resolveResults.add(it) }
 
             findOberonASharedLibraryProcedureDeclExportedByModule(memberName, module)
-                ?.let { resolveResults.add(it.procDeclName) }
+                ?.let { resolveResults.add(it) }
 
             findTypeDeclNameExportedByModule(memberName, module)
                 ?.let { resolveResults.add(it) }
@@ -78,7 +79,7 @@ internal fun resolveByMemberName(
     memberName: String
 ): List<OberonNamedElement> {
     val resolveResults = mutableListOf<OberonNamedElement>()
-
+// TODO top level decls
     val containingProcedure = procedureDeclContaining(referencingElement)
     val proceduresToSearch = containingProcedure?.let { parentProcedureDeclsOf(it) + it }
 

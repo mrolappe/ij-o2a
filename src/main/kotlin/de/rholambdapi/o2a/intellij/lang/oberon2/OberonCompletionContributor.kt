@@ -24,8 +24,8 @@ internal val INSIDE_MODULE_TAIL = psiElement().inside(OberonModuleTail::class.ja
 internal val INSIDE_MODULE_INIT = psiElement().with(object : PatternCondition<PsiElement>("insideModuleInit") {
     override fun accepts(t: PsiElement, context: ProcessingContext?): Boolean {
         val moduleTail = t.parentsOfType<OberonModuleTail>().firstOrNull() ?: return false
-        val begin = moduleTail.moduleInit?.firstChild ?: return false
-        val end = moduleTail.lastChild.prevLeaf { it.elementType == OberonTypes.END } ?: return false
+        val begin = moduleTail.moduleInit?.beginKeyword ?: return false
+        val end = moduleTail.endKeyword ?: return false
         return TextRange(begin.endOffset, end.startOffset).contains(t.startOffset)
     }
 })

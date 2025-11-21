@@ -23,7 +23,7 @@ class OberonFindUsagesProvider : FindUsagesProvider {
 
     override fun canFindUsagesFor(psiElement: PsiElement): Boolean {
         val canFind = psiElement.parent is OberonProcedureDecl || psiElement is OberonConstDeclName || psiElement is OberonVarDeclName
-                || psiElement is OberonTypeDeclName || psiElement is OberonImportAlias || psiElement is de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonModuleDefName
+                || psiElement is OberonTypeDeclName || psiElement is OberonImportAlias
                 || psiElement is OberonFormalParamName || psiElement is OberonReceiverName
         LOG.debug("OberonFindUsagesProvider::canFindUsagesFor, psiElement: $psiElement (parent: ${psiElement.parent}) -> $canFind")
         return canFind
@@ -40,7 +40,7 @@ class OberonFindUsagesProvider : FindUsagesProvider {
             is OberonReceiverName -> "receiver"
             is OberonTypeDeclName -> "type"
             is OberonVarDeclName -> "variable"
-            else -> "??? usage type"
+            else -> "??? OberonFindUsagesProvider::getType; element: $element"
         }
 
         LOG.debug("OberonFindUsagesProvider::getType, element: $element, element parent: ${element.parent} -> $type")
@@ -79,6 +79,6 @@ class OberonFindUsagesProvider : FindUsagesProvider {
             }
         }
         LOG.debug("OberonFindUsagesProvider::getNodeText, element: $element, useFullName: $useFullName -> $nodeText")
-        return nodeText!!
+        return nodeText ?: "??? nodeText"
     }
 }

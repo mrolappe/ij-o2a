@@ -43,7 +43,10 @@ class AutodocLookup(private val basePath: Path) {
         }
     }
 
-    internal fun autodocFunctionDescriptionOrNull(functionName: Autodoc.ElementName, autodocFileInputStream: InputStream): String? {
+    internal fun autodocFunctionDescriptionOrNull(
+        functionName: Autodoc.ElementName,
+        autodocFileInputStream: InputStream
+    ): String? {
         val autodoc = getAutodocsByFunctionName(functionName).firstOrNull()
         return autodoc
             ?.contentForSection(functionName, FUNCTION)
@@ -53,12 +56,11 @@ class AutodocLookup(private val basePath: Path) {
     internal fun getAutodocsByFunctionName(functionName: Autodoc.ElementName): Set<Autodoc> {
         // TODO use index infrastructure
 
-        return autodocFiles.map {
+        return autodocFiles.mapNotNull {
             val autodoc = parseAutodoc(it.inputStream, it.name)
             if (autodoc == null) log.warn("Failed to parse ${it.name} as autodoc")
             autodoc
         }
-            .filterNotNull()
             .filter { it.documentsFunction(functionName) }
             .toSet()
     }
@@ -105,8 +107,6 @@ class AutodocLookup(private val basePath: Path) {
             return null
         }
 
-        val entryHeaderRegex = Regex("^\\f([\\p{Alnum}._\\-/]{1,39})\\s*\\1\$")
-
         val autodoc = ByteArrayInputStream(buffer.toByteArray())
             .reader(Charsets.ISO_8859_1)
             .readLines()
@@ -117,7 +117,9 @@ class AutodocLookup(private val basePath: Path) {
                 // no marker found, so assume there was no TOC either -> fail
                 if (idx == 0) return null
 
-                var tocEntry = tocEntries.firstOrNull { lines[idx].startsWith(it.entryName, 1) }
+                var tocEntry = tocEntries.firstOrNull {
+                    lines[idx].startsWith(it.entryHeaderLine, 1)
+                }
 
                 // TODO handle names truncated due to overlap
                 if (tocEntry == null) {
@@ -143,7 +145,10 @@ class AutodocLookup(private val basePath: Path) {
                     while (idx < lines.size && lines[idx].isBlank()) ++idx
                     if (idx == lines.size) break
 
-                    tocEntry = tocEntries.firstOrNull { lines[idx].startsWith(it.entryName, 1) }
+                    tocEntry = tocEntries.firstOrNull {
+                        lines[idx].startsWith(it.entryHeaderLine, 1)
+                    }
+
                     if (tocEntry == null) {
                         log.warn("Source $sourceName; aborting, no matching TOC entry for header line: ${lines[idx]}")
                         return@let null
@@ -155,7 +160,11 @@ class AutodocLookup(private val basePath: Path) {
 
         return autodoc
     }
+
 }
+
+internal val TocEntry.entryHeaderLine
+    get() = entryName.padStart(77).replaceRange(0, entryName.length, entryName)
 
 data class TocEntry(val moduleName: String, val elementName: String) {
     val entryName
@@ -172,9 +181,19 @@ value class SectionName(val name: String) {
 private val String.asElementName: Autodoc.ElementName
     get() = Autodoc.ElementName(this)
 
+val NAME = SectionName("NAME")
+val SYNOPSIS = SectionName("SYNOPSIS")
 val FUNCTION = SectionName("FUNCTION")
 val INPUTS = SectionName("INPUTS")
-val NAME = SectionName("NAME")
+val BUGS = SectionName("BUGS")
+val RESULT = SectionName("RESULT")
+val RETURNS = SectionName("RETURNS")
+val SEE_ALSO = SectionName("SEE ALSO")
+
+data class SectionContent(private val content: String) {
+    val asString: String
+        get() = content
+}
 
 data class Autodoc(private val moduleName: ModuleName, private val entries: List<Entry>) {
     private val entryByName by lazy { entries.associateBy { it.name } }
@@ -183,7 +202,11 @@ data class Autodoc(private val moduleName: ModuleName, private val entries: List
         return entryByName.containsKey(name)
     }
 
-    fun contentForSection(element: ElementName, section: SectionName): Entry.SectionContent? {
+    fun contentBySection(element: ElementName): Map<SectionName, SectionContent>? {
+        return entryByName[element]?.sections
+    }
+
+    fun contentForSection(element: ElementName, section: SectionName): SectionContent? {
         return entryByName[element]?.sections?.get(section)
     }
 
@@ -210,10 +233,6 @@ data class Autodoc(private val moduleName: ModuleName, private val entries: List
     }
 
     data class Entry(val name: ElementName, val sections: Map<SectionName, SectionContent>) {
-        data class SectionContent(private val content: String) {
-            val asString: String
-                get() = content
-        }
 
     }
 }
@@ -221,10 +240,10 @@ data class Autodoc(private val moduleName: ModuleName, private val entries: List
 private const val FF = '\u000c'
 
 
-fun entrySectionsFromLines(lines: Sequence<String>): Map<SectionName, Autodoc.Entry.SectionContent> {
-    val sectionTitleRegex = Regex("^ {3,4}[a-zA-Z]+\$")
+fun entrySectionsFromLines(lines: Sequence<String>): Map<SectionName, SectionContent> {
+    val sectionTitleRegex = Regex("^ {3,4}[A-Z]+[A-Z ]*\$")
 
-    val result = mutableMapOf<SectionName, Autodoc.Entry.SectionContent>()
+    val result = mutableMapOf<SectionName, SectionContent>()
 
     val iterator = lines.iterator()
     var current = if (iterator.hasNext()) iterator.next() else null
@@ -238,14 +257,14 @@ fun entrySectionsFromLines(lines: Sequence<String>): Map<SectionName, Autodoc.En
             current = if (iterator.hasNext()) iterator.next() else null
 
             while (current?.matches(sectionTitleRegex) == false) {
-                sectionLines.append(current)
+                sectionLines.append(current).append('\n')
                 current = if (iterator.hasNext()) iterator.next() else null
             }
 
-            result.put(
-                SectionName(sectionTitle),
-                Autodoc.Entry.SectionContent(sectionLines.toString())
-            )
+            var endIdx = sectionLines.length - 1
+            while (endIdx > 0 && sectionLines[endIdx] == '\n') --endIdx
+
+            result[SectionName(sectionTitle)] = SectionContent(sectionLines.substring(0, endIdx + 1))
             sectionLines.clear()
         } else {
             current = if (iterator.hasNext()) iterator.next() else null

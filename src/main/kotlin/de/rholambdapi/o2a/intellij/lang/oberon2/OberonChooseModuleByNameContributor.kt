@@ -9,13 +9,14 @@ import com.intellij.util.Processor
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.indexing.FindSymbolParameters
 import com.intellij.util.indexing.IdFilter
+import de.rholambdapi.o2a.intellij.lang.oberon2.psi.impl.moduleName
 
 // TODO use ChooseByNameContributorEx
 class OberonChooseModuleByNameContributor : ChooseByNameContributor {
     override fun getNames(project: Project, includeNonProjectItems: Boolean): Array<String> {
         // TODO use IJ indexing framework
         val modules = OberonUtil.findAllModules(project)
-        return modules.map { it.moduleDefName.moduleName.text!! }.toTypedArray()
+        return modules.map { it.moduleName?.text ?: "???" }.toTypedArray()
     }
 
     override fun getItemsByName(

@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiUtilCore
+import com.intellij.psi.util.parentOfType
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
 import de.rholambdapi.o2a.intellij.lang.oberon2.psi.*
@@ -41,6 +42,7 @@ class OberonInlayProvider : InlayHintsProvider<NoSettings> {
 
         return object : FactoryInlayHintsCollector(editor) {
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
+//                println("oberon inlay hints collector, element: $element, parent: ${element.parent}")
                 log.debug("oberon inlay hints collector, element: $element, editor: $editor, sink: $sink")
 
                 if (PsiUtilCore.getElementType(element) != OberonTypes.BEGIN) return true
@@ -56,22 +58,26 @@ class OberonInlayProvider : InlayHintsProvider<NoSettings> {
                         )
                     }
 
-                    is OberonProcedureDecl -> {
-                        val procedureDecl = parent
-                        val procedureName = procedureDecl.procedureName
+                    // TODO more stable way of checking for procedure etc.
+                    is OberonProcedureDeclBody -> {
+                        val procedureDecl = parent.parentOfType<OberonProcedureDecl>()!!
+                        val procedureName = procedureDecl?.procedureName ?: "???"
 
-                        val procedureNameInlay =
-                            BiStatePresentation({ factory.roundWithBackground(factory.smallTextWithoutBackground("procedure $procedureName")) },
-                                { SpacePresentation(1, 1) }, true
+                        val presentation1 = {
+                            factory.roundWithBackground(
+                                factory.smallTextWithoutBackground("procedure $procedureName")
                             )
+                        }
+                        val presentation2 = { SpacePresentation(1, 1) }
+                        val procedureNameInlay = BiStatePresentation(presentation1, presentation2, true)
 
                         ApplicationManager.getApplication().invokeLater {
                             editor.scrollingModel.addVisibleAreaListener {
-                                if (isElementVisibleInEditor(
-                                        procedureDecl,
-                                        editor
-                                    )
-                                ) procedureNameInlay.setSecond() else procedureNameInlay.setFirst()
+                                if (isElementVisibleInEditor(procedureDecl, editor)) {
+                                    procedureNameInlay.setSecond()
+                                } else {
+                                    procedureNameInlay.setFirst()
+                                }
                             }
                         }
 

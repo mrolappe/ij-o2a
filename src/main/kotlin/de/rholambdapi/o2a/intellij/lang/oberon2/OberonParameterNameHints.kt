@@ -25,10 +25,11 @@ class OberonParameterNameHints : InlayParameterHintsProvider {
     private fun parameterHintsFor(procCall: OberonProcCallStmt): List<InlayInfo> {
         if (!procCall.hasAnyArguments) return emptyList()
 
-        val resolvedElement = procCall.procedureDesignator.reference.resolve() ?: return emptyList()
+        val resolvedElement = procCall.procedureDesignator.reference?.resolve() ?: return emptyList()
 
         val procDecl = when (resolvedElement) {
             is OberonProcedureDecl -> resolvedElement
+            is OberonOberonALibProcDecl -> return parameterHintsFor(resolvedElement as OberonOberonALibProcDecl)
             is OberonProcDeclName -> resolvedElement.parentOfType<OberonProcedureDecl>() ?: return emptyList()
             is OberonIdentDef -> resolvedElement.parentOfType<OberonProcedureDecl>() ?: return emptyList()
             is OberonFormalParamName -> {
@@ -48,6 +49,11 @@ class OberonParameterNameHints : InlayParameterHintsProvider {
         return procCall.actualParams?.exprList?.exprList
             ?.mapIndexedNotNull { idx, expr -> if (expr.isLiteral) InlayInfo(parameterNames[idx], expr.startOffset) else null }
             ?: emptyList()
+    }
+
+    private fun parameterHintsFor(libProc: OberonOberonALibProcDecl): List<InlayInfo> {
+        println("TODO parameterHintsFor(libProc: OberonOberonALibProcDecl)")
+        return emptyList()
     }
 
     override fun getDefaultBlackList() = emptySet<String>()

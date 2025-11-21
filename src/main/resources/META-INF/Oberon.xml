@@ -27,8 +27,8 @@
         <lang.formatter language="Oberon"
                         implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonFormattingModelBuilder"/>
 
-<!--        <codeStyleSettingsProvider-->
-<!--                implementation="de.rholambdapi.o2a.intellij.lang.oberon22.OberonCodeStyleSettingsProvider"/>-->
+        <!--        <codeStyleSettingsProvider-->
+        <!--                implementation="de.rholambdapi.o2a.intellij.lang.oberon22.OberonCodeStyleSettingsProvider"/>-->
 
         <langCodeStyleSettingsProvider
                 implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonLanguageCodeStyleSettingsProvider"/>
@@ -50,7 +50,8 @@
         <lang.documentationProvider language="Oberon"
                                     implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonDocumentationProvider"/>
 
-        <documentationActionProvider implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonDocumentationActionProvider" />
+        <documentationActionProvider
+                implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonDocumentationActionProvider"/>
 
         <codeInsight.typeInfo language="Oberon"
                               implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonExpressionTypeProvider"/>
@@ -71,29 +72,29 @@
                              implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonHeaderCommentFoldingBuilder"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonConstSectionFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonConstSectionFoldingBuilder"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonTypeSectionFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonTypeSectionFoldingBuilder"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonIfFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonIfFoldingBuilder"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonCaseFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonCaseFoldingBuilder"/>
 
         <lang.foldingBuilder language="Oberon"
-                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonLoopFoldingBuilder" />
+                             implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonLoopFoldingBuilder"/>
 
         <lang.findUsagesProvider language="Oberon"
-                                 implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonFindUsagesProvider" />
+                                 implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonFindUsagesProvider"/>
 
-        <navbar implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonStructureAwareNavBar" />
+        <navbar implementation="de.rholambdapi.o2a.intellij.lang.oberon2.OberonStructureAwareNavBar"/>
 
         <codeInsight.parameterNameHints language="Oberon"
-                                        implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonParameterNameHints" />
+                                        implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.OberonParameterNameHints"/>
 
-        <defaultLiveTemplates file="/liveTemplates/Oberon.xml" />
+        <defaultLiveTemplates file="/liveTemplates/Oberon.xml"/>
 
         <liveTemplateContext implementation="de.rholambdapi.o2a.intellij.lang.oberon2.liveTemplates.OberonContext"
                              contextId="Oberon"/>
@@ -121,5 +122,11 @@
         
         <lang.elementManipulator forClass="de.rholambdapi.o2a.intellij.lang.oberon2.psi.OberonProcedureDeclTail"
                                  implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.refactoring.ProcedureDeclTailManipulator" />
+
+<!--
+        <codeInsight.declarativeInlayProvider bundle="messages.MyBundle" group="OTHER_GROUP"
+                                              implementationClass="de.rholambdapi.o2a.intellij.lang.oberon2.SandkastenDeclarativeHintsProvider"
+                                              isEnabledByDefault="true" language="Oberon" nameKey="shuffle" providerId="rlp" />
+-->
     </extensions>
 </idea-plugin>
