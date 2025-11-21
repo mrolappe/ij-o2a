@@ -76,7 +76,7 @@ tasks.withType<Test>().configureEach {
 
 intellijPlatform {
     pluginConfiguration {
-        id = "de.rholambdapi.o2a.intellij.ij-o2a"
+        id = "de.rholambdapi.o2a.ij-o2a"
         name = properties("pluginName")
         version = properties("pluginVersion")
 

@@ -1,6 +1,6 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
-    <id>de.rholambdapi.o2a.intellij.ij-o2a</id>
+    <id>de.rholambdapi.o2a.ij-o2a</id>
     <name>Oberon-2/Amiga support</name>
     <vendor email="215132+mrolappe@users.noreply.github.com">Marco Rolappe</vendor>
 
