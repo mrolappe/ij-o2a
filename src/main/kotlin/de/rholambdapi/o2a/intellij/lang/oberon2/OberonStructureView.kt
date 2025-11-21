@@ -54,7 +54,7 @@ class OberonStructureViewModel(file: OberonFile, editor: Editor?) :
     }
 
     override fun getFilters(): Array<Filter> {
-        return arrayOf(TmpDummyFilter())
+        return arrayOf(/*TmpDummyFilter()*/)
     }
 
     override fun getSorters(): Array<Sorter> = arrayOf(Sorter.ALPHA_SORTER/*, MySorter1, MySorter2*/)
