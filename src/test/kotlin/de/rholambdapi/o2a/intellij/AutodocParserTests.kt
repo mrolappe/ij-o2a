@@ -1,7 +1,9 @@
 package de.rholambdapi.o2a.intellij
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+@Disabled("Not yet implemented")
 class AutodocParserTests {
     @Test
     fun shouldParseTocEntryWithEmptyElementName() {

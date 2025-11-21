@@ -4,14 +4,14 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 @Disabled("Not yet implemented")
-class OberonElementFactoryTests {
+class CommenterTest //: LightPlatformCodeInsightFixture4TestCase()
+{
     @Test
-    fun shouldCreateProcedure() {
+    fun shouldCorrectlyCommentLine() {
         TODO("Not yet implemented")
     }
 
-    @Test
-    fun shouldCreateDummyFile() {
-        TODO("Not yet implemented")
-    }
+//    override fun getTestDataPath(): String {
+//        return "src/test/testData"
+//    }
 }
