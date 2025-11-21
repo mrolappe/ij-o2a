@@ -1,6 +1,8 @@
 package de.rholambdapi.o2a.intellij.lang.oberon2
 
 import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.annotation.UnsafeResultErrorAccess
+import com.github.michaelbull.result.annotation.UnsafeResultValueAccess
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test
 import java.io.DataInput
 import java.io.DataInputStream
 
+@OptIn(UnsafeResultErrorAccess::class, UnsafeResultValueAccess::class)  // TODO adjust access
 class OberonASymFileParserTests {
     @Test
     fun shouldParseIntuitionSymFile() {
