@@ -46,9 +46,9 @@ dependencies {
         testFramework(TestFrameworkType.JUnit5)
     }
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
     testImplementation("junit:junit:4.13.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.3")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:6.0.2")
 
     testImplementation(libs.kotestRunner)
